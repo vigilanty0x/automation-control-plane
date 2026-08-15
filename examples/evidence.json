@@ -1,0 +1,17 @@
+{
+  "artifacts": [
+    "artifacts/ownership-report.json"
+  ],
+  "commit_sha": "replace-with-the-current-40-character-worktree-head",
+  "criteria": {
+    "ownership report exists": true,
+    "unit tests pass": true
+  },
+  "notes": [
+    "Example values are synthetic. Replace the commit SHA before completion."
+  ],
+  "produced_by": "docs-agent",
+  "tests": [
+    "python -m unittest:pass"
+  ]
+}
