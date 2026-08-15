@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "graph_id": "public-example",
+  "version": "1.0.0",
+  "tasks": [
+    {
+      "task_id": "contract",
+      "owner": "architect",
+      "description": "Define the synthetic public contract.",
+      "path_scope": ["docs/CONTRACT.md"],
+      "dependencies": [],
+      "max_attempts": 2,
+      "required_evidence": ["decision"]
+    },
+    {
+      "task_id": "implementation",
+      "owner": "builder",
+      "description": "Implement the synthetic public behavior.",
+      "path_scope": ["src/example.py"],
+      "dependencies": ["contract"],
+      "max_attempts": 3,
+      "required_evidence": ["commit", "test"]
+    },
+    {
+      "task_id": "review",
+      "owner": "reviewer",
+      "description": "Review evidence independently.",
+      "path_scope": ["reports/review.json"],
+      "dependencies": ["implementation"],
+      "max_attempts": 1,
+      "required_evidence": ["artifact", "decision"]
+    }
+  ]
+}
+
