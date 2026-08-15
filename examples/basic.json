@@ -1,0 +1,11 @@
+{
+  "job": {
+    "id": "job-1",
+    "version": 1,
+    "action": "publish-report",
+    "state": "pending",
+    "spent": 0,
+    "budget": 10
+  },
+  "target": "approved"
+}
