@@ -30,5 +30,4 @@ jobs:
         env:
           PIP_NO_INDEX: "1"
           PIP_DISABLE_PIP_VERSION_CHECK: "1"
-        run: python -m pip wheel . --no-deps --no-build-isolation -w dist
-
+        run: python -m pip wheel . --no-deps -w dist
