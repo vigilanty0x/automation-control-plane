@@ -22,5 +22,4 @@ jobs:
       - run: python scripts/check.py
       - run: python -m agent_budgeter fixture examples/control.json --journal /tmp/evidence.jsonl
       - run: python -m agent_budgeter probe functional
-      - run: python -m pip wheel . --no-deps --no-build-isolation --wheel-dir /tmp/wheel
-
+      - run: python -m pip wheel . --no-deps --wheel-dir /tmp/wheel
