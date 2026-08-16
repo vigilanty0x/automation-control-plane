@@ -8,4 +8,7 @@ htmlcov/
 .venv/
 build/
 dist/
-
+*.db
+*.db-shm
+*.db-wal
+backups/

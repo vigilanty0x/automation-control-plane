@@ -1,0 +1,49 @@
+{
+  "schema_version": "1.0",
+  "workflow_id": "synthetic-release",
+  "version": 1,
+  "description": "Offline synthetic release evidence with a bound final approval.",
+  "budget_units": 10,
+  "default_deadline_seconds": 900,
+  "triggers": [
+    {"type": "manual"},
+    {"type": "webhook", "event": "synthetic.release.requested"},
+    {"type": "scheduled", "interval_seconds": 86400}
+  ],
+  "steps": [
+    {
+      "id": "prepare",
+      "handler": "emit",
+      "depends_on": [],
+      "input": {"artifact": "synthetic-report", "classification": "public-example"},
+      "required_capability": "handler:emit",
+      "approval": "none",
+      "estimated_cost": 1,
+      "timeout_seconds": 30,
+      "retry": {"max_attempts": 3, "initial_delay_seconds": 1, "multiplier": 2, "max_delay_seconds": 30}
+    },
+    {
+      "id": "verify",
+      "handler": "assert.equals",
+      "depends_on": ["prepare"],
+      "input": {"actual": "verified", "expected": "verified"},
+      "required_capability": "handler:assert.equals",
+      "approval": "none",
+      "estimated_cost": 0,
+      "timeout_seconds": 30,
+      "retry": {"max_attempts": 2, "initial_delay_seconds": 1, "multiplier": 2, "max_delay_seconds": 10}
+    },
+    {
+      "id": "release",
+      "handler": "noop",
+      "depends_on": ["verify"],
+      "input": {},
+      "required_capability": "handler:noop",
+      "approval": "required",
+      "estimated_cost": 0,
+      "timeout_seconds": 30,
+      "retry": {"max_attempts": 1, "initial_delay_seconds": 0, "multiplier": 1, "max_delay_seconds": 0}
+    }
+  ]
+}
+
