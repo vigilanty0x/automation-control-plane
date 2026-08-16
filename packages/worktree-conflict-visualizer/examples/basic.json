@@ -1,0 +1,18 @@
+{
+  "worktrees": [
+    {
+      "name": "feature-a",
+      "files": [
+        "src/a.py"
+      ]
+    },
+    {
+      "name": "feature-b",
+      "files": [
+        "src/a.py",
+        "tests/test_a.py"
+      ]
+    }
+  ]
+}
+
