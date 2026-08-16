@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/question.schema.json",
+  "title": "Question",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "routine_id", "trigger", "short_text", "explanation", "status", "answer_schema", "evidence_refs", "expected_utility", "consequence_preview", "branch", "created_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^qst_"}, "routine_id": {"type": "string", "pattern": "^rou_"},
+    "trigger": {"type": "string"}, "short_text": {"type": "string"}, "explanation": {"type": "string"},
+    "status": {"enum": ["candidate", "queued", "shown", "snoozed", "answered", "dismissed", "expired"]},
+    "answer_schema": {"type": "object"}, "evidence_refs": {"type": "array", "items": {"type": "string"}},
+    "expected_utility": {"type": "object"}, "privacy": {"type": "object"}, "consequence_preview": {"type": "object"},
+    "branch": {"type": "object"}, "created_at": {"type": "string"}, "snoozed_until": {"type": "string"}
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/permission-manifest.schema.json",
+  "title": "PermissionManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "filesystem", "network", "applications", "ui", "external_effects", "budgets", "human_confirmation"],
+  "properties": {
+    "version": {"const": "0.1.0"},
+    "filesystem": {"type": "object", "required": ["read", "write", "delete"], "properties": {"read": {"type": "array"}, "write": {"type": "array"}, "delete": {"type": "array", "maxItems": 0}}, "additionalProperties": false},
+    "network": {"type": "object", "required": ["mode"], "properties": {"mode": {"const": "deny"}}, "additionalProperties": false},
+    "applications": {"type": "object"}, "ui": {"type": "object"},
+    "external_effects": {"type": "object", "additionalProperties": {"const": false}},
+    "budgets": {"type": "object"}, "human_confirmation": {"type": "object"}
+  }
+}

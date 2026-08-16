@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/evidence.schema.json",
+  "title": "Evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["evidence_id", "kind", "claim", "observer", "observed_at", "inputs", "result", "integrity", "confidence"],
+  "properties": {
+    "evidence_id": {"type": "string", "pattern": "^evd_"}, "kind": {"type": "string"}, "claim": {"type": "string"},
+    "observer": {"type": "object", "required": ["type"], "properties": {"type": {"type": "string"}}, "additionalProperties": false},
+    "observed_at": {"type": "string"}, "inputs": {"type": "object"}, "result": {"type": "object"},
+    "integrity": {"type": "object", "required": ["digest"], "properties": {"digest": {"type": "string"}}, "additionalProperties": false},
+    "confidence": {"enum": ["proved", "failed", "unknown"]}
+  }
+}

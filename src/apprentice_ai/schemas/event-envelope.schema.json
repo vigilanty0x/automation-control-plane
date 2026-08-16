@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/event-envelope.schema.json",
+  "title": "EventEnvelope",
+  "description": "Privacy-filtered, hash-chained event returned by timeline interfaces.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "timestamp", "session_id", "sequence", "application", "action", "privacy", "integrity"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^evt_[A-Za-z0-9][A-Za-z0-9_.-]{2,95}$"},
+    "timestamp": {"type": "string", "pattern": "Z$", "maxLength": 64},
+    "session_id": {"type": "string", "pattern": "^ses_[A-Za-z0-9][A-Za-z0-9_.-]{2,95}$"},
+    "sequence": {"type": "integer", "minimum": 1},
+    "source": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,119}$"},
+    "application": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": {"type": "string", "maxLength": 120},
+        "version": {"type": "string", "maxLength": 120}
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {"type": "string", "maxLength": 120},
+        "target_role": {"type": "string", "maxLength": 120},
+        "target_label": {"type": "string", "maxLength": 240},
+        "value": {"type": "string", "maxLength": 20000},
+        "text": {"type": "string", "maxLength": 20000},
+        "content": {"type": "string", "maxLength": 20000}
+      }
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "demo_id": {"type": "string"},
+        "dataset_id": {"type": "string"},
+        "climate": {"type": "string"},
+        "split": {"type": "string"},
+        "synthetic": {"type": "boolean"},
+        "url": {"type": "string", "maxLength": 2048},
+        "password": {"type": "string"},
+        "token": {"type": "string"},
+        "api_key": {"type": "string"},
+        "credential": {"type": "string"}
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "redactions", "guard"],
+      "properties": {
+        "classification": {"enum": ["D1", "D2", "D3", "D4"]},
+        "redactions": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+        "guard": {"type": "string", "const": "privacy-guard/0.1.0"}
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["previous_event_hash", "event_hash"],
+      "properties": {
+        "previous_event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+        "event_hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"}
+      }
+    }
+  }
+}

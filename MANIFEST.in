@@ -1,0 +1,6 @@
+include README.md LICENSE NOTICE CHANGELOG.md SECURITY.md PRIVACY.md GOVERNANCE.md CONTRIBUTING.md CODE_OF_CONDUCT.md ARCHITECTURE.md ROADMAP.md THREAT_MODEL.md AGENTS.md
+recursive-include docs *.md
+recursive-include src/apprentice_ai/schemas *.json
+recursive-include src/apprentice_ai/web *.html *.css *.js
+include src/apprentice_ai/py.typed
+recursive-include tests *.py
