@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "target": "agent-handoff",
+  "base": "agent-handoff",
+  "baseHeadSha": "7a970a43d7847df78508c7a033e9d5cd5b0c6755",
+  "sources": [
+    {
+      "repository": "handoff-markdown-cli",
+      "prefix": "packages/handoff-markdown-cli",
+      "headSha": "23098efac6d7eab71680d3e03e59b0c879cb9fb0",
+      "treeSha": "2be90fd93a5a9e58dca54d953569204957b763b3",
+      "ancestor": true,
+      "treeMatch": true
+    }
+  ],
+  "state": "REHEARSAL_ONLY",
+  "archiveGate": "BLOCKED",
+  "reason": "Tests, compatibility, release, redirect, consumer, rollback, and human gates are not all verified."
+}
