@@ -1,15 +1,25 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools==80.9.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "automation-control-plane"
-version = "0.1.0"
-description = "Governed offline automation state transitions, approval, kill switch, and budgets."
+version = "1.0.0"
+description = "Dependency-free governed automation control plane with durable DAG execution, approvals, leases, budgets, and audit."
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "Apache-2.0"}
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 dependencies = []
+authors = [{name = "Automation Control Plane contributors"}]
+keywords = ["automation", "workflow", "sqlite", "governance", "dag"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: System :: Systems Administration",
+]
 
 [project.scripts]
 automation-control-plane = "automation_control_plane.cli:main"
@@ -18,4 +28,3 @@ automation-control-plane = "automation_control_plane.cli:main"
 package-dir = {"" = "src"}
 [tool.setuptools.packages.find]
 where = ["src"]
-
