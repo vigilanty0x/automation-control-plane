@@ -151,7 +151,7 @@ def main() -> int:
             if required not in ci:
                 problems.append(f"CI missing control: {required}")
     project = ROOT / "pyproject.toml"
-    if project.is_file() and 'requires = ["setuptools==80.9.0"]' not in project.read_text(encoding="utf-8"):
+    if project.is_file() and 'requires = ["setuptools==83.0.0"]' not in project.read_text(encoding="utf-8"):
         problems.append("build backend is not exactly pinned")
     source_root = ROOT / "src"
     own_modules = {path.name for path in source_root.iterdir() if path.is_dir()} if source_root.is_dir() else set()
