@@ -17,7 +17,6 @@ from ._common import (
 from .inventory import SOURCE_INVENTORY
 
 _CONSUMER_KINDS = (
-    "code_reference",
     "documentation",
     "fork",
     "import",
