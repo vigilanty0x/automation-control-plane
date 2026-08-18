@@ -168,7 +168,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          PYTHONPATH=src python scripts/agentops_core_compat_probe.py \
+          PYTHONPATH=src python scripts/agentops_core_compat_runner.py \
             --budgeter-root .compat/agent-budgeter \
             --retry-root .compat/agent-retry-kit \
             --hitl-root .compat/human-in-the-loop-queue \
