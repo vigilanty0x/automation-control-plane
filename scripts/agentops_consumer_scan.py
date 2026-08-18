@@ -179,7 +179,10 @@ def _aliases(repository: str) -> tuple[str, ...]:
 
 
 def classify_path(path: str) -> str | None:
-    normalized = path.casefold().lstrip("./")
+    normalized = path.casefold().replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
+    normalized = normalized.lstrip("/")
     name = PurePosixPath(normalized).name
     suffix = PurePosixPath(normalized).suffix
     if normalized.startswith(WORKFLOW_PREFIX):
@@ -253,9 +256,7 @@ def _scan_archive(
                         seen.add(signature)
                         if len(found[source]) >= MAX_REFERENCES_PER_SOURCE:
                             raise ScanError(f"reference limit exceeded for source {source}")
-                        found[source].append(
-                            {"consumer": repository, "kind": kind, "evidence": evidence_ref}
-                        )
+                        found[source].append({"consumer": repository, "kind": kind, "evidence": evidence_ref})
     except tarfile.TarError as exc:
         raise ScanError(f"invalid tarball for {repository}: {exc}") from exc
     finally:
@@ -391,15 +392,13 @@ def _markdown_report(
     ]
     for kind in ("import", "package", "workflow", "documentation", "fork", "pilot"):
         lines.append(f"- {kind}: `{kind_counts.get(kind, 0)}`")
-    lines.extend(
-        [
-            "",
-            "## Gate semantics",
-            "",
-            "A passing structural receipt does not authorize migration, redirect, release, rollback, or archive.",
-            "If pilot coverage is not explicitly declared complete, the evidence remains failed rather than silently assuming zero pilots.",
-        ]
-    )
+    lines.extend([
+        "",
+        "## Gate semantics",
+        "",
+        "A passing structural receipt does not authorize migration, redirect, release, rollback, or archive.",
+        "If pilot coverage is not explicitly declared complete, the evidence remains failed rather than silently assuming zero pilots.",
+    ])
     if source_sha_drift:
         lines.extend(["", "## Source SHA drift", ""])
         for item in source_sha_drift:
