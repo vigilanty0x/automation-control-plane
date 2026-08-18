@@ -47,7 +47,7 @@ jobs:
       - name: Validate repository contracts
         run: |
           python -m compileall -q src tests scripts
-          python -m unittest discover -s tests -v
+          PYTHONPATH=src python -m unittest discover -s tests -v
           python scripts/check.py
       - name: Remove the temporary workflow and commit the normalized branch
         shell: bash
