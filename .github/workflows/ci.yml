@@ -48,6 +48,8 @@ jobs:
           "$sdist_env/bin/agentops" inventory > "$RUNNER_TEMP/sdist-agentops.json"
           "$wheel_env/bin/agentops" compatibility > "$RUNNER_TEMP/wheel-compatibility.json"
           "$sdist_env/bin/agentops" compatibility > "$RUNNER_TEMP/sdist-compatibility.json"
+          "$wheel_env/bin/agentops" migration-contracts > "$RUNNER_TEMP/wheel-migration-contracts.json"
+          "$sdist_env/bin/agentops" migration-contracts > "$RUNNER_TEMP/sdist-migration-contracts.json"
           "$wheel_env/bin/agentops" consumers --input examples/agentops/consumers.json > "$RUNNER_TEMP/wheel-consumers.json"
           "$sdist_env/bin/agentops" consumers --input examples/agentops/consumers.json > "$RUNNER_TEMP/sdist-consumers.json"
           "$wheel_env/bin/agentops" rollback --input examples/agentops/rollback.json > "$RUNNER_TEMP/wheel-rollback.json"
@@ -56,6 +58,7 @@ jobs:
           diff -u "$RUNNER_TEMP/wheel-smoke.json" "$RUNNER_TEMP/sdist-smoke.json"
           diff -u "$RUNNER_TEMP/wheel-agentops.json" "$RUNNER_TEMP/sdist-agentops.json"
           diff -u "$RUNNER_TEMP/wheel-compatibility.json" "$RUNNER_TEMP/sdist-compatibility.json"
+          diff -u "$RUNNER_TEMP/wheel-migration-contracts.json" "$RUNNER_TEMP/sdist-migration-contracts.json"
           diff -u "$RUNNER_TEMP/wheel-consumers.json" "$RUNNER_TEMP/sdist-consumers.json"
           diff -u "$RUNNER_TEMP/wheel-rollback.json" "$RUNNER_TEMP/sdist-rollback.json"
       - name: Unit and adversarial tests
@@ -82,7 +85,7 @@ jobs:
           path: .compat/agent-quota-simulator
           persist-credentials: false
       - name: Checkout exact agent-session-recorder source evidence
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af1c54 # v4.2.2
         with:
           repository: ${{ github.repository_owner }}/agent-session-recorder
           ref: 2363c4efe0c61158c523a6dfc3d29cb3d7af1c54
@@ -203,6 +206,7 @@ jobs:
         run: |
           agentops inventory
           agentops compatibility
+          agentops migration-contracts
           agentops route --input examples/agentops/routing.json
           agentops context --input examples/agentops/context.json
           agentops quota --input examples/agentops/quota.json
