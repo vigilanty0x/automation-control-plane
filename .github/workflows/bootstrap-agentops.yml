@@ -7,6 +7,13 @@ on:
   push:
     branches:
       - audit/agentops-rehearsal-v1-20260818
+  pull_request:
+    branches:
+      - agent/secure-setuptools-build
+
+concurrency:
+  group: agentops-rehearsal-assembly
+  cancel-in-progress: false
 
 jobs:
   assemble:
