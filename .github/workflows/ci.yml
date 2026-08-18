@@ -125,6 +125,26 @@ jobs:
           path: agentops-compatibility-evidence.json
           if-no-files-found: error
           retention-days: 30
+      - name: Run SHA-bound candidate adapter counter-proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python scripts/agentops_adapter_compat_probe.py \
+            --agentmesh-root .compat/agentmesh \
+            --context-root .compat/context-window-budgeter \
+            --quota-root .compat/agent-quota-simulator \
+            --session-root .compat/agent-session-recorder \
+            --circuit-root .compat/circuit-breaker-lab \
+            --target-root . \
+            --output agentops-adapter-evidence.json
+          cat agentops-adapter-evidence.json
+      - name: Upload AgentOps candidate adapter evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agentops-adapter-evidence-py${{ matrix.python-version }}-${{ github.run_id }}
+          path: agentops-adapter-evidence.json
+          if-no-files-found: error
+          retention-days: 30
       - name: Checkout exact agent-budgeter source evidence
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
