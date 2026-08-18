@@ -13,6 +13,7 @@ from .consumers import inventory_consumers
 from .context import plan_context
 from .inbox import project_inbox
 from .inventory import inventory
+from .migration_contracts import migration_contract_inventory
 from .quota import simulate_quota
 from .rollback import rehearse_rollback
 from .routing import evaluate_routing
@@ -21,6 +22,7 @@ from .sessions import record_session, verify_session
 _NO_INPUT_COMMANDS: dict[str, Callable[[], dict[str, Any]]] = {
     "inventory": inventory,
     "compatibility": compatibility_inventory,
+    "migration-contracts": migration_contract_inventory,
 }
 
 _COMMANDS: dict[str, tuple[str, Callable[[Any], dict[str, Any]]]] = {
@@ -63,6 +65,10 @@ def _parser() -> argparse.ArgumentParser:
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("inventory", help="emit the exact source and disposition inventory")
     subparsers.add_parser("compatibility", help="emit SHA-bound source package/import/CLI surfaces without activating aliases")
+    subparsers.add_parser(
+        "migration-contracts",
+        help="emit versioned fail-closed adapter and incompatibility contracts for all satellite sources",
+    )
     for command in _COMMANDS:
         command_parser = subparsers.add_parser(command)
         command_parser.add_argument(
