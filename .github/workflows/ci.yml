@@ -63,14 +63,14 @@ jobs:
       - name: Checkout exact agentmesh source evidence
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          repository: vigilanty0x/agentmesh
+          repository: ${{ github.repository_owner }}/agentmesh
           ref: 320f5116f6582519d1609ce87287fd9ff7267eb3
           path: .compat/agentmesh
           persist-credentials: false
       - name: Checkout exact context-window-budgeter source evidence
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
-          repository: vigilanty0x/context-window-budgeter
+          repository: ${{ github.repository_owner }}/context-window-budgeter
           ref: 35bb3e05d05ad870715b740143c429f08eda25e7
           path: .compat/context-window-budgeter
           persist-credentials: false
