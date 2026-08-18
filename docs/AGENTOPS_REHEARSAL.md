@@ -18,7 +18,7 @@ The base already owns the controls that would be unsafe to duplicate:
 - a machine-readable CLI and loopback-only read-only dashboard;
 - deny-by-default handler registration with no arbitrary shell, subprocess, network, or dynamic-import workflow handler.
 
-The AgentOps rehearsal therefore adds only bounded planning, simulation, evidence, and read-only projection seams.
+The AgentOps rehearsal therefore adds only bounded planning, simulation, evidence, read-only projection, migration-evidence, and rollback-planning seams.
 
 ## Implemented modules
 
@@ -30,6 +30,8 @@ The AgentOps rehearsal therefore adds only bounded planning, simulation, evidenc
 | `session_evidence` | Redaction-aware SHA-256 session chains and expected-head verification | None |
 | `circuit_breakers` | Closed/open/half-open transition simulation with invalid-transition counter-proofs | None |
 | `operator_inbox` | Read-only prioritization of exported job snapshots | None |
+| `consumer_inventory_contract` | Fail-closed completeness gate for imports, packages, workflows, docs, forks, and pilot references | None |
+| `rollback_contract` | Deterministic recovery ordering and negative checks for migration rollback evidence | None |
 
 Existing core behavior remains authoritative for approvals, budgets, idempotency, retry policy, task graphs, and deadlines. No second durable queue or execution engine is introduced.
 
@@ -45,9 +47,11 @@ PYTHONPATH=src python -m automation_control_plane.agentops quota --input example
 PYTHONPATH=src python -m automation_control_plane.agentops session-record --input examples/agentops/session.json
 PYTHONPATH=src python -m automation_control_plane.agentops circuit --input examples/agentops/circuit.json
 PYTHONPATH=src python -m automation_control_plane.agentops inbox --input examples/agentops/inbox.json
+PYTHONPATH=src python -m automation_control_plane.agentops consumers --input examples/agentops/consumers.json
+PYTHONPATH=src python -m automation_control_plane.agentops rollback --input examples/agentops/rollback.json
 ```
 
-Every command emits one deterministic JSON object. Exit `0` means the contract passed. Exit `2` means a valid counterexample failed the contract or malformed input was blocked.
+Every command emits one deterministic JSON object. Exit `0` means the supplied bounded contract passed. Exit `2` means a valid counterexample failed the contract or malformed input was blocked.
 
 ## Evidence semantics
 
@@ -59,6 +63,8 @@ Every command emits one deterministic JSON object. Exit `0` means the contract p
 
 Source observations are separately dated and expire. See `AGENTOPS_SOURCE_INVENTORY.json`.
 
+A passing consumer contract is not a claim that a live consumer scan occurred. A passing rollback contract is not a claim that a repository, package, redirect, or consumer was actually rolled back. Both receipts explicitly retain `portfolio_gate: not_run` until live evidence is bound to current SHAs and reviewed.
+
 ## Security boundaries
 
 - JSON input is capped at 1 MB and output at 2 MB.
@@ -66,7 +72,7 @@ Source observations are separately dated and expire. See `AGENTOPS_SOURCE_INVENT
 - Integers reject booleans and use explicit bounds.
 - Session events reject sensitive key names such as credentials, authorization data, cookies, and private keys.
 - Session integrity is distinct from authenticity. Authenticity is `verified` only when both a trusted initial digest and trusted expected head are supplied.
-- The quota and circuit modules are simulations and never claim provider reservation or runtime enforcement.
+- The quota, circuit, consumer, and rollback modules do not execute external operations.
 - The inbox module is a read-only projection and performs no job mutation.
 - No module performs network access, shell execution, subprocess creation, dynamic import, or filesystem mutation beyond CLI input reads.
 
@@ -78,13 +84,19 @@ PYTHONPATH=src python scripts/check.py
 python -m build --no-isolation
 ```
 
-The dedicated suite includes positive tests and counter-proofs for unhealthy routes, ownership mismatch, required-budget overflow, duplicate tasks, session tampering, sensitive event keys, invalid circuit transitions, terminal inbox filtering, duplicate JSON members, and failure exit codes.
+The dedicated suite includes positive tests and counter-proofs for unhealthy routes, ownership mismatch, required-budget overflow, duplicate tasks, session tampering, sensitive event keys, invalid circuit transitions, terminal inbox filtering, duplicate JSON members, incomplete consumer coverage, duplicate consumer evidence, impossible consumer migration counts, failed rollback checks, and failure exit codes.
+
+CI also builds sdist and wheel, installs both in separate clean environments, and verifies output parity for the durable CLI plus AgentOps inventory, consumer, and rollback commands.
 
 ## Gates still blocked
 
 - named human approval of the canonical AgentOps product boundary;
 - source-history import and exact migration commits;
+- live consumer inventory and consumer migration;
 - compatibility aliases for standalone commands;
-- target release, package publication, consumer migration, redirects, rollback rehearsal, and source archive.
+- target release and package publication;
+- redirects and deprecation windows;
+- real rollback rehearsal bound to migration SHAs;
+- source archive.
 
-No standalone source repository may be archived merely because this rehearsal passes.
+The consumer-inventory and rollback **contracts** are prepared and tested; the corresponding portfolio migration gates remain `NOT_RUN` or `BLOCKED`. No standalone source repository may be archived merely because this rehearsal passes.

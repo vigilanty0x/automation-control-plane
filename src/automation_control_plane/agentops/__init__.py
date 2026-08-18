@@ -5,19 +5,23 @@ without weakening the durable control-plane execution boundary.
 """
 
 from .circuits import simulate_circuit
+from .consumers import inventory_consumers
 from .context import plan_context
 from .inbox import project_inbox
 from .inventory import inventory
 from .quota import simulate_quota
+from .rollback import rehearse_rollback
 from .routing import evaluate_routing
 from .sessions import record_session, verify_session
 
 __all__ = [
     "evaluate_routing",
     "inventory",
+    "inventory_consumers",
     "plan_context",
     "project_inbox",
     "record_session",
+    "rehearse_rollback",
     "simulate_circuit",
     "simulate_quota",
     "verify_session",

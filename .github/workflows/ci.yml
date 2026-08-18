@@ -46,9 +46,15 @@ jobs:
           "$sdist_env/bin/automation-control-plane" examples/basic.json > "$RUNNER_TEMP/sdist-smoke.json"
           "$wheel_env/bin/agentops" inventory > "$RUNNER_TEMP/wheel-agentops.json"
           "$sdist_env/bin/agentops" inventory > "$RUNNER_TEMP/sdist-agentops.json"
+          "$wheel_env/bin/agentops" consumers --input examples/agentops/consumers.json > "$RUNNER_TEMP/wheel-consumers.json"
+          "$sdist_env/bin/agentops" consumers --input examples/agentops/consumers.json > "$RUNNER_TEMP/sdist-consumers.json"
+          "$wheel_env/bin/agentops" rollback --input examples/agentops/rollback.json > "$RUNNER_TEMP/wheel-rollback.json"
+          "$sdist_env/bin/agentops" rollback --input examples/agentops/rollback.json > "$RUNNER_TEMP/sdist-rollback.json"
           diff -u "$RUNNER_TEMP/wheel-version.txt" "$RUNNER_TEMP/sdist-version.txt"
           diff -u "$RUNNER_TEMP/wheel-smoke.json" "$RUNNER_TEMP/sdist-smoke.json"
           diff -u "$RUNNER_TEMP/wheel-agentops.json" "$RUNNER_TEMP/sdist-agentops.json"
+          diff -u "$RUNNER_TEMP/wheel-consumers.json" "$RUNNER_TEMP/sdist-consumers.json"
+          diff -u "$RUNNER_TEMP/wheel-rollback.json" "$RUNNER_TEMP/sdist-rollback.json"
       - name: Unit and adversarial tests
         run: python -m unittest discover -s tests -v
       - name: Bytecode compile check
@@ -72,3 +78,5 @@ jobs:
           agentops session-record --input examples/agentops/session.json
           agentops circuit --input examples/agentops/circuit.json
           agentops inbox --input examples/agentops/inbox.json
+          agentops consumers --input examples/agentops/consumers.json
+          agentops rollback --input examples/agentops/rollback.json

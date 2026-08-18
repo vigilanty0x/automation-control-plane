@@ -13,7 +13,9 @@
     "quota_simulation",
     "session_evidence",
     "circuit_breakers",
-    "operator_inbox"
+    "operator_inbox",
+    "consumer_inventory_contract",
+    "rollback_contract"
   ],
   "deduplicatedIntoCore": [
     "approvals_queue",
@@ -28,7 +30,10 @@
     "collisionReport": "PASS",
     "compatibilityContract": "PASS",
     "contractRehearsal": "PASS",
+    "consumerInventoryContract": "PASS",
+    "rollbackContract": "PASS",
     "sourceHistoryImport": "NOT_RUN",
+    "consumerInventory": "NOT_RUN",
     "humanDecision": "BLOCKED",
     "release": "BLOCKED",
     "consumerMigration": "BLOCKED",

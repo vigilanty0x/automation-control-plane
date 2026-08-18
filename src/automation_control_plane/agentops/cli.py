@@ -8,10 +8,12 @@ from typing import Any, Callable, Sequence
 
 from ._common import MAX_INPUT_BYTES, MAX_OUTPUT_BYTES, ValidationError, blocked, canonical_json, strict_loads
 from .circuits import simulate_circuit
+from .consumers import inventory_consumers
 from .context import plan_context
 from .inbox import project_inbox
 from .inventory import inventory
 from .quota import simulate_quota
+from .rollback import rehearse_rollback
 from .routing import evaluate_routing
 from .sessions import record_session, verify_session
 
@@ -23,6 +25,8 @@ _COMMANDS: dict[str, tuple[str, Callable[[Any], dict[str, Any]]]] = {
     "session-verify": ("session_verify", verify_session),
     "circuit": ("circuit_simulation", simulate_circuit),
     "inbox": ("operator_inbox", project_inbox),
+    "consumers": ("consumer_inventory", inventory_consumers),
+    "rollback": ("rollback_rehearsal", rehearse_rollback),
 }
 
 
