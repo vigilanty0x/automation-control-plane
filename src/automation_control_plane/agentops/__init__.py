@@ -4,6 +4,7 @@ This subpackage adds deterministic, dependency-free planning and evidence module
 without weakening the durable control-plane execution boundary.
 """
 
+from .adapters import rehearse_adapter
 from .circuits import simulate_circuit
 from .compatibility import compatibility_inventory
 from .consumers import inventory_consumers
@@ -27,6 +28,7 @@ __all__ = [
     "plan_migration",
     "project_inbox",
     "record_session",
+    "rehearse_adapter",
     "rehearse_rollback",
     "simulate_circuit",
     "simulate_quota",
