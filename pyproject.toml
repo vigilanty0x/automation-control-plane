@@ -23,6 +23,7 @@ classifiers = [
 
 [project.scripts]
 automation-control-plane = "automation_control_plane.cli:main"
+agentops = "automation_control_plane.agentops.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
