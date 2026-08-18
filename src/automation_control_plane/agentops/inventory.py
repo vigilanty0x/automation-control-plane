@@ -1,0 +1,138 @@
+from __future__ import annotations
+
+from typing import Any
+
+from ._common import evidence
+
+OBSERVED_AT = "2026-08-18T01:45:00Z"
+EXPIRES_AT = "2026-09-17T01:45:00Z"
+SELECTED_BASE = "automation-control-plane"
+SELECTED_BASE_MAIN_SHA = "42920b932e1eeb9acf143907a7283453cf03eb81"
+REHEARSAL_PARENT_SHA = "7cae160f0e6eb88c19081627eb5fd3b545961f6f"
+
+SOURCE_INVENTORY: tuple[dict[str, str], ...] = (
+    {
+        "repository": "agentmesh",
+        "main_sha": "320f5116f6582519d1609ce87287fd9ff7267eb3",
+        "module": "routing_evidence",
+        "disposition": "contract_rehearsal",
+    },
+    {
+        "repository": "agent-budgeter",
+        "main_sha": "cfa9c0a8830f3e2e3a11602da590e347f8483d2f",
+        "module": "budgets",
+        "disposition": "deduplicated_into_core",
+    },
+    {
+        "repository": "agent-inbox",
+        "main_sha": "748f237659f98a2a49478aa58913e71e59a03433",
+        "module": "operator_inbox",
+        "disposition": "read_only_projection_rehearsal",
+    },
+    {
+        "repository": "agent-quota-simulator",
+        "main_sha": "e99000cecf12432365e8ccfc8fa6e4b1d18ad15f",
+        "module": "quota_simulation",
+        "disposition": "test_lab_rehearsal",
+    },
+    {
+        "repository": "agent-retry-kit",
+        "main_sha": "38f97aaa6796fda6956202aad9086e3e5e8ada9f",
+        "module": "retry_policy",
+        "disposition": "deduplicated_into_core",
+    },
+    {
+        "repository": "agent-session-recorder",
+        "main_sha": "2363c4efe0c61158c523a6dfc3d29cb3d7af1c54",
+        "module": "session_evidence",
+        "disposition": "redaction_aware_contract_rehearsal",
+    },
+    {
+        "repository": "circuit-breaker-lab",
+        "main_sha": "2924dfb6eed8a208788491fa1d50fa6bd99e4359",
+        "module": "circuit_breakers",
+        "disposition": "test_lab_rehearsal",
+    },
+    {
+        "repository": "context-window-budgeter",
+        "main_sha": "35bb3e05d05ad870715b740143c429f08eda25e7",
+        "module": "context_budgets",
+        "disposition": "contract_rehearsal",
+    },
+    {
+        "repository": "human-in-the-loop-queue",
+        "main_sha": "db281bf7ff971a2fd4ca6af9e495b2c0fd6cd30b",
+        "module": "approvals_queue",
+        "disposition": "deduplicated_into_core",
+    },
+    {
+        "repository": "idempotency-kit",
+        "main_sha": "80e78a4d9b73aeabb200578c2ecb5090f31a410f",
+        "module": "idempotency",
+        "disposition": "deduplicated_into_core",
+    },
+    {
+        "repository": "taskgraph",
+        "main_sha": "937abf0d096cb1f6ff48aa09b8dd8a69d9a36c0d",
+        "module": "task_graph",
+        "disposition": "deduplicated_into_core",
+    },
+    {
+        "repository": "timeout-toolkit",
+        "main_sha": "a2a053e39a6eaa40cde7d81f87ee4838cf562583",
+        "module": "timeouts",
+        "disposition": "deduplicated_into_core",
+    },
+    {
+        "repository": "automation-control-plane",
+        "main_sha": SELECTED_BASE_MAIN_SHA,
+        "module": "core",
+        "disposition": "selected_base",
+    },
+)
+
+DEDUPLICATED_CORE_CAPABILITIES: tuple[str, ...] = (
+    "approvals_queue",
+    "budgets",
+    "idempotency",
+    "retry_policy",
+    "task_graph",
+    "timeouts",
+)
+
+REHEARSAL_MODULES: tuple[str, ...] = (
+    "circuit_breakers",
+    "context_budgets",
+    "operator_inbox",
+    "quota_simulation",
+    "routing_evidence",
+    "session_evidence",
+)
+
+
+def inventory() -> dict[str, Any]:
+    payload = {
+        "selected_base": SELECTED_BASE,
+        "selected_base_main_sha": SELECTED_BASE_MAIN_SHA,
+        "rehearsal_parent_sha": REHEARSAL_PARENT_SHA,
+        "observed_at": OBSERVED_AT,
+        "expires_at": EXPIRES_AT,
+        "sources": list(SOURCE_INVENTORY),
+    }
+    details = {
+        **payload,
+        "source_count": len(SOURCE_INVENTORY),
+        "deduplicated_core_capabilities": list(DEDUPLICATED_CORE_CAPABILITIES),
+        "rehearsal_modules": list(REHEARSAL_MODULES),
+        "gates": {
+            "source_sha_inventory": "passed",
+            "collision_report": "prepared",
+            "compatibility_contract": "prepared",
+            "contract_rehearsal": "prepared",
+            "source_history_import": "not_run",
+            "human_decision": "blocked",
+            "release": "blocked",
+            "source_archive": "blocked",
+        },
+    }
+    return evidence("inventory", "passed", payload, details)

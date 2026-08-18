@@ -1,0 +1,15 @@
+{
+  "policy": {
+    "failure_threshold": 2,
+    "success_threshold": 2,
+    "max_events": 10
+  },
+  "initial_state": "closed",
+  "events": [
+    {"id": "failure-a", "outcome": "failure"},
+    {"id": "failure-b", "outcome": "failure"},
+    {"id": "cooldown", "outcome": "cooldown_elapsed"},
+    {"id": "probe-a", "outcome": "success"},
+    {"id": "probe-b", "outcome": "success"}
+  ]
+}
