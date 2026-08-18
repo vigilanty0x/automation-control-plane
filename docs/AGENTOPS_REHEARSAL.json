@@ -14,7 +14,9 @@
     "session_evidence",
     "circuit_breakers",
     "operator_inbox",
+    "compatibility_interface_inventory",
     "consumer_inventory_contract",
+    "consumer_inventory_collector",
     "rollback_contract"
   ],
   "deduplicatedIntoCore": [
@@ -29,6 +31,8 @@
     "sourceShaInventory": "PASS",
     "collisionReport": "PASS",
     "compatibilityContract": "PASS",
+    "compatibilityInterfaceInventory": "PASS",
+    "legacyAliasActivation": "BLOCKED",
     "contractRehearsal": "PASS",
     "consumerInventoryContract": "PASS",
     "consumerInventoryCollector": "PREPARED",

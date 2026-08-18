@@ -8,6 +8,7 @@ from typing import Any, Callable, Sequence
 
 from ._common import MAX_INPUT_BYTES, MAX_OUTPUT_BYTES, ValidationError, blocked, canonical_json, strict_loads
 from .circuits import simulate_circuit
+from .compatibility import compatibility_inventory
 from .consumers import inventory_consumers
 from .context import plan_context
 from .inbox import project_inbox
@@ -16,6 +17,11 @@ from .quota import simulate_quota
 from .rollback import rehearse_rollback
 from .routing import evaluate_routing
 from .sessions import record_session, verify_session
+
+_NO_INPUT_COMMANDS: dict[str, Callable[[], dict[str, Any]]] = {
+    "inventory": inventory,
+    "compatibility": compatibility_inventory,
+}
 
 _COMMANDS: dict[str, tuple[str, Callable[[Any], dict[str, Any]]]] = {
     "route": ("routing", evaluate_routing),
@@ -56,6 +62,7 @@ def _parser() -> argparse.ArgumentParser:
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("inventory", help="emit the exact source and disposition inventory")
+    subparsers.add_parser("compatibility", help="emit SHA-bound source package/import/CLI surfaces without activating aliases")
     for command in _COMMANDS:
         command_parser = subparsers.add_parser(command)
         command_parser.add_argument(
@@ -68,8 +75,8 @@ def _parser() -> argparse.ArgumentParser:
 
 def main(argv: Sequence[str] | None = None) -> int:
     args = _parser().parse_args(argv)
-    if args.command == "inventory":
-        result = inventory()
+    if args.command in _NO_INPUT_COMMANDS:
+        result = _NO_INPUT_COMMANDS[args.command]()
     else:
         kind, handler = _COMMANDS[args.command]
         try:

@@ -5,6 +5,7 @@ without weakening the durable control-plane execution boundary.
 """
 
 from .circuits import simulate_circuit
+from .compatibility import compatibility_inventory
 from .consumers import inventory_consumers
 from .context import plan_context
 from .inbox import project_inbox
@@ -15,6 +16,7 @@ from .routing import evaluate_routing
 from .sessions import record_session, verify_session
 
 __all__ = [
+    "compatibility_inventory",
     "evaluate_routing",
     "inventory",
     "inventory_consumers",
