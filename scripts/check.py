@@ -80,6 +80,10 @@ def _secret_kinds(text: str) -> set[str]:
     return kinds
 
 
+def _is_generated_path(path: Path) -> bool:
+    return any(part in SKIP_PARTS or part.endswith(".egg-info") for part in path.parts)
+
+
 def main() -> int:
     problems: list[str] = []
     for name in REQUIRED:
@@ -90,7 +94,7 @@ def main() -> int:
         if path.is_symlink():
             problems.append(f"symlink is not allowed: {path.relative_to(ROOT)}")
             continue
-        if not path.is_file() or any(part in SKIP_PARTS for part in path.parts):
+        if not path.is_file() or _is_generated_path(path):
             continue
         if path.suffix not in TEXT_SUFFIXES and path.name != ".gitignore":
             continue
@@ -154,8 +158,10 @@ def main() -> int:
     if project.is_file() and 'requires = ["setuptools>=83.0.0,<84"]' not in project.read_text(encoding="utf-8"):
         problems.append("build backend requirement is not the supported audited range")
     source_root = ROOT / "src"
-    own_modules = {path.name for path in source_root.iterdir() if path.is_dir()} if source_root.is_dir() else set()
+    own_modules = {path.name for path in source_root.iterdir() if path.is_dir() and not path.name.endswith(".egg-info")} if source_root.is_dir() else set()
     for path in source_root.rglob("*.py") if source_root.is_dir() else ():
+        if _is_generated_path(path):
+            continue
         source = path.read_text(encoding="utf-8")
         try:
             tree = ast.parse(source, filename=str(path))
