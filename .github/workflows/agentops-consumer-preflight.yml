@@ -1,8 +1,25 @@
 name: AgentOps public consumer preflight
 
 on:
+  workflow_dispatch:
   push:
+    paths:
+      - ".github/workflows/agentops-consumer-preflight.yml"
+      - "scripts/agentops_consumer_scan.py"
+      - "scripts/agentops_consumer_triage.py"
+      - "src/automation_control_plane/agentops/consumers.py"
+      - "src/automation_control_plane/agentops/migration_plan.py"
+      - "docs/AGENTOPS_SOURCE_INVENTORY.json"
+      - "docs/AGENTOPS_PILOT_MANIFEST_TEMPLATE.json"
   pull_request:
+    paths:
+      - ".github/workflows/agentops-consumer-preflight.yml"
+      - "scripts/agentops_consumer_scan.py"
+      - "scripts/agentops_consumer_triage.py"
+      - "src/automation_control_plane/agentops/consumers.py"
+      - "src/automation_control_plane/agentops/migration_plan.py"
+      - "docs/AGENTOPS_SOURCE_INVENTORY.json"
+      - "docs/AGENTOPS_PILOT_MANIFEST_TEMPLATE.json"
 
 permissions:
   contents: read
