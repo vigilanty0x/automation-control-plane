@@ -10,6 +10,7 @@ from .consumers import inventory_consumers
 from .context import plan_context
 from .inbox import project_inbox
 from .inventory import inventory
+from .migration_contracts import migration_contract_inventory
 from .quota import simulate_quota
 from .rollback import rehearse_rollback
 from .routing import evaluate_routing
@@ -20,6 +21,7 @@ __all__ = [
     "evaluate_routing",
     "inventory",
     "inventory_consumers",
+    "migration_contract_inventory",
     "plan_context",
     "project_inbox",
     "record_session",
