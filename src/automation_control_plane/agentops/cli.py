@@ -14,6 +14,7 @@ from .context import plan_context
 from .inbox import project_inbox
 from .inventory import inventory
 from .migration_contracts import migration_contract_inventory
+from .migration_plan import plan_migration
 from .quota import simulate_quota
 from .rollback import rehearse_rollback
 from .routing import evaluate_routing
@@ -35,6 +36,7 @@ _COMMANDS: dict[str, tuple[str, Callable[[Any], dict[str, Any]]]] = {
     "inbox": ("operator_inbox", project_inbox),
     "consumers": ("consumer_inventory", inventory_consumers),
     "rollback": ("rollback_rehearsal", rehearse_rollback),
+    "migration-plan": ("migration_plan", plan_migration),
 }
 
 
