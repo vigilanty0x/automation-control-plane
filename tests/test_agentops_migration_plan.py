@@ -1,7 +1,13 @@
 from __future__ import annotations
 
+from contextlib import redirect_stdout
+import io
+import json
+from pathlib import Path
+import tempfile
 import unittest
 
+from automation_control_plane.agentops.cli import main
 from automation_control_plane.agentops.migration_contracts import MIGRATION_CONTRACTS
 from automation_control_plane.agentops.migration_plan import plan_migration
 
@@ -92,6 +98,19 @@ class MigrationPlanTests(unittest.TestCase):
         payload["triage"]["sources"].pop()
         result = plan_migration(payload)
         self.assertEqual(result["status"], "blocked")
+
+    def test_cli_accepts_bounded_evidence_file_and_still_blocks_formal_gate(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "migration-plan.json"
+            path.write_text(json.dumps(self.payload()), encoding="utf-8")
+            output = io.StringIO()
+            with redirect_stdout(output):
+                code = main(["migration-plan", "--input", str(path)])
+        self.assertEqual(code, 0)
+        result = json.loads(output.getvalue())
+        self.assertEqual(result["kind"], "migration_plan")
+        self.assertEqual(result["details"]["formal_migration_gate"], "blocked")
+        self.assertFalse(result["details"]["migration_performed"])
 
 
 if __name__ == "__main__":
