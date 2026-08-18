@@ -7,6 +7,7 @@ import sys
 from typing import Any, Callable, Sequence
 
 from ._common import MAX_INPUT_BYTES, MAX_OUTPUT_BYTES, ValidationError, blocked, canonical_json, strict_loads
+from .adapters import rehearse_adapter
 from .circuits import simulate_circuit
 from .compatibility import compatibility_inventory
 from .consumers import inventory_consumers
@@ -37,6 +38,7 @@ _COMMANDS: dict[str, tuple[str, Callable[[Any], dict[str, Any]]]] = {
     "consumers": ("consumer_inventory", inventory_consumers),
     "rollback": ("rollback_rehearsal", rehearse_rollback),
     "migration-plan": ("migration_plan", plan_migration),
+    "adapter-rehearsal": ("adapter_rehearsal", rehearse_adapter),
 }
 
 
