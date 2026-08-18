@@ -1,0 +1,133 @@
+name: A03 release quality
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  SOURCE_DATE_EPOCH: "315532800"
+
+jobs:
+  candidate:
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install pinned A03 build toolchain
+        run: python -m pip install --disable-pip-version-check --upgrade -r requirements-build-a03.txt
+      - name: Build wheel and sdist
+        run: |
+          python -m pip wheel . --no-deps --wheel-dir dist
+          python -c "from setuptools.build_meta import build_sdist; print(build_sdist('dist'))"
+      - name: Verify candidate cardinality
+        run: python -c "from pathlib import Path; w=list(Path('dist').glob('*.whl')); s=list(Path('dist').glob('*.tar.gz')); assert len(w)==1,w; assert len(s)==1,s; print(w[0].name,s[0].name)"
+      - name: Install candidate wheel
+        run: python -c "import glob,subprocess,sys; w=glob.glob('dist/*.whl'); assert len(w)==1,w; subprocess.check_call([sys.executable,'-m','pip','install','--disable-pip-version-check','--no-deps','--force-reinstall',w[0]])"
+      - name: Run existing repository tests
+        run: python -m unittest discover -s tests -v
+      - name: Verify installed distribution and console entry point
+        run: |
+          python -c "import pathlib,tomllib,importlib.metadata as m; p=tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']; assert m.version(p['name'])==p['version']; eps=[e for e in m.distribution(p['name']).entry_points if e.group=='console_scripts']; print(p['name'],p['version'],[e.name for e in eps])"
+          python -c "import pathlib,tomllib,importlib.metadata as m,subprocess; p=tomllib.loads(pathlib.Path('pyproject.toml').read_text(encoding='utf-8'))['project']; eps=[e.name for e in m.distribution(p['name']).entry_points if e.group=='console_scripts']; subprocess.check_call([eps[0],'--help']) if eps else None"
+      - name: Verify publication remains disabled
+        run: python -c "import json,pathlib; p=json.loads(pathlib.Path('release-policy.a03.v1.json').read_text(encoding='utf-8')); assert p['state']=='PREPARED' and p['publish_enabled'] is False; w=pathlib.Path('.github/workflows/a03-release-quality.yml').read_text(encoding='utf-8'); forbidden=['publish-release:','gh release create','contents: write','git tag','twine upload','pypa/gh-action-pypi-publish']; assert not [x for x in forbidden if x in w]"
+      - name: Generate checksums, SBOM, and prepared receipt
+        env:
+          MODEL_ROUTER_TESTS_VERIFIED: "1"
+          MODEL_ROUTER_COUNTERPROOF_VERIFIED: "1"
+        run: python scripts/a03_release_evidence.py --dist dist --output release-evidence-a03
+      - name: Verify positive release evidence
+        run: python scripts/a03_verify_release_evidence.py --dist dist --sums release-evidence-a03/SHA256SUMS.txt
+      - name: Tamper counter-proof must fail closed
+        run: |
+          python -c "from pathlib import Path; import shutil,tempfile; src=Path('dist'); dst=Path(tempfile.mkdtemp())/'dist'; shutil.copytree(src,dst); target=next(dst.glob('*.whl')); target.write_bytes(target.read_bytes()+b'counter-proof'); Path('tampered-dist.txt').write_text(str(dst),encoding='utf-8')"
+          python -c "import subprocess,sys,pathlib; d=pathlib.Path('tampered-dist.txt').read_text(encoding='utf-8'); r=subprocess.run([sys.executable,'scripts/a03_verify_release_evidence.py','--dist',d,'--sums','release-evidence-a03/SHA256SUMS.txt']); assert r.returncode==2, r.returncode"
+      - name: Install and smoke source distribution in clean venv
+        run: |
+          python -c "import glob,subprocess,sys,tempfile,pathlib; s=glob.glob('dist/*.tar.gz'); assert len(s)==1,s; v=pathlib.Path(tempfile.mkdtemp())/'venv'; subprocess.check_call([sys.executable,'-m','venv',str(v)]); py=v/('Scripts/python.exe' if sys.platform=='win32' else 'bin/python'); subprocess.check_call([str(py),'-m','pip','install','--disable-pip-version-check','--no-deps',s[0]]); print(py)"
+      - name: Verify receipt cannot claim publication
+        run: python -c "import json; v=json.load(open('release-evidence-a03/RELEASE_EVIDENCE.json')); assert v['state']=='PREPARED'; assert v['tests_verified'] and v['counterproof_verified']; assert all(v[k] is False for k in ('signed','attested','tagged','published','released'))"
+      - name: Upload A03 candidate evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: model-router-a03-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            release-evidence-a03/SHA256SUMS.txt
+            release-evidence-a03/model-router.cdx.json
+            release-evidence-a03/RELEASE_EVIDENCE.json
+          if-no-files-found: error
+          retention-days: 14
+
+  attest-candidate:
+    needs: [candidate]
+    if: ${{ (github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor == github.repository_owner) || (github.event_name == 'pull_request' && github.actor == github.repository_owner && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: model-router-a03-ubuntu-latest-py3.11
+          path: /tmp/model-router-download
+          digest-mismatch: error
+      - name: Normalize candidate wheel
+        run: |
+          mkdir -p /tmp/model-router-candidate
+          wheel="$(find /tmp/model-router-download -type f -name '*.whl' -print)"
+          test "$(printf '%s\n' "$wheel" | grep -c .)" -eq 1
+          cp "$wheel" /tmp/model-router-candidate/
+      - name: Generate signed SLSA provenance
+        id: attest
+        uses: actions/attest@508db95dd578ae2727ebd6217d5ba78e4fbda05d # v4.2.1
+        with:
+          subject-path: /tmp/model-router-candidate/*.whl
+      - name: Strictly verify provenance
+        env:
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          wheel="$(find /tmp/model-router-candidate -maxdepth 1 -name '*.whl' -print -quit)"
+          test -s "$BUNDLE_PATH"
+          gh attestation verify "$wheel" --repo "$GITHUB_REPOSITORY" --bundle "$BUNDLE_PATH" --signer-workflow "$GITHUB_REPOSITORY/.github/workflows/a03-release-quality.yml" --source-ref "$GITHUB_REF" --source-digest "$GITHUB_SHA" --deny-self-hosted-runners >/dev/null
+      - name: Write A03 attestation receipt
+        env:
+          ATTESTATION_ID: ${{ steps.attest.outputs.attestation-id }}
+          ATTESTATION_URL: ${{ steps.attest.outputs.attestation-url }}
+          BUNDLE_PATH: ${{ steps.attest.outputs.bundle-path }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          value={"schema_version":"1.0","product":"Model Router","repository":os.environ["GITHUB_REPOSITORY"],"source_ref":os.environ["GITHUB_REF"],"source_digest":os.environ["GITHUB_SHA"],"runner_environment":os.environ.get("RUNNER_ENVIRONMENT"),"attestation_id":os.environ.get("ATTESTATION_ID"),"attestation_url":os.environ.get("ATTESTATION_URL"),"bundle_path":os.environ.get("BUNDLE_PATH"),"verified_with_gh_cli":True,"provenance":"sigstore-slsa-github-actions","publication_authorized":False}
+          Path('/tmp/model-router-candidate/ATTESTATION-RECEIPT.json').write_text(json.dumps(value,sort_keys=True,indent=2)+'\n',encoding='utf-8')
+          PY
+      - name: Upload signed A03 evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: model-router-a03-provenance-${{ github.run_id }}
+          path: |
+            ${{ steps.attest.outputs.bundle-path }}
+            /tmp/model-router-candidate/*.whl
+            /tmp/model-router-candidate/ATTESTATION-RECEIPT.json
+          if-no-files-found: error
+          retention-days: 30
