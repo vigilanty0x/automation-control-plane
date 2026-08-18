@@ -32,6 +32,7 @@ jobs:
           python - <<'PY'
           from __future__ import annotations
 
+          from base64 import b64decode
           from hashlib import sha256
           from io import BytesIO
           import json
@@ -42,7 +43,14 @@ jobs:
           root = Path.cwd().resolve()
           bootstrap = root / ".bootstrap-agentops"
           manifest = json.loads((bootstrap / "manifest.json").read_text(encoding="utf-8"))
-          archive = (bootstrap / "agentops.tar.gz").read_bytes()
+          parts = sorted(bootstrap.glob("archive.part-*.b64"))
+          if not parts:
+              raise SystemExit("missing archive chunks")
+          encoded = "".join(part.read_text(encoding="ascii").strip() for part in parts)
+          try:
+              archive = b64decode(encoded, validate=True)
+          except Exception as exc:
+              raise SystemExit("invalid base64 archive chunks") from exc
           if manifest.get("schemaVersion") != 1:
               raise SystemExit("unsupported bootstrap manifest")
           if len(archive) != manifest.get("archiveBytes"):
