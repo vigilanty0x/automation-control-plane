@@ -63,6 +63,53 @@ jobs:
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit "$code"
+      - name: Derive fail-closed migration plan
+        id: plan
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f agentops-consumer-preflight/inventory.json || ! -f agentops-consumer-preflight/triage.json ]]; then
+            echo '{"status":"blocked","reason":"inventory or triage missing"}' | tee agentops-consumer-preflight/migration-plan-summary.json
+            exit 2
+          fi
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path("agentops-consumer-preflight")
+          payload = {
+              "consumer_inventory": json.loads((root / "inventory.json").read_text(encoding="utf-8")),
+              "triage": json.loads((root / "triage.json").read_text(encoding="utf-8")),
+          }
+          (root / "migration-plan-input.json").write_text(
+              json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          set +e
+          PYTHONPATH=src python -m automation_control_plane.agentops migration-plan \
+            --input agentops-consumer-preflight/migration-plan-input.json \
+            > agentops-consumer-preflight/migration-plan.json
+          code=$?
+          set -e
+          python - <<'PY' | tee agentops-consumer-preflight/migration-plan-summary.json
+          import json
+          from pathlib import Path
+          result = json.loads(Path("agentops-consumer-preflight/migration-plan.json").read_text(encoding="utf-8"))
+          details = result.get("details", {})
+          print(json.dumps({
+              "status": result.get("status"),
+              "formal_migration_gate": details.get("formal_migration_gate"),
+              "adapter_candidates": details.get("adapter_candidates", []),
+              "observed_runtime_reference_count": details.get("observed_runtime_reference_count"),
+              "pilot_coverage_complete": details.get("pilot_coverage_complete"),
+              "planning_evidence_ready": details.get("planning_evidence_ready"),
+              "migration_performed": details.get("migration_performed"),
+          }, sort_keys=True, separators=(",", ":")))
+          PY
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
       - name: Publish preflight report
         if: always()
         shell: bash
@@ -81,6 +128,14 @@ jobs:
           else
             printf '%s\n' 'Triage did not produce a summary.' >> "$GITHUB_STEP_SUMMARY"
           fi
+          printf '%s\n' '' '## Fail-closed migration plan' '' >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f agentops-consumer-preflight/migration-plan-summary.json ]]; then
+            printf '%s\n' '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat agentops-consumer-preflight/migration-plan-summary.json >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '%s\n' 'Migration planner did not produce a summary.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Upload bounded preflight evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -97,8 +152,11 @@ jobs:
           SCAN_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
           TRIAGE_OUTCOME: ${{ steps.triage.outcome }}
           TRIAGE_EXIT_CODE: ${{ steps.triage.outputs.exit_code }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exit_code }}
         run: |
           echo "preflight scan outcome=$SCAN_OUTCOME exit_code=${SCAN_EXIT_CODE:-unknown}"
           echo "triage outcome=$TRIAGE_OUTCOME exit_code=${TRIAGE_EXIT_CODE:-unknown}"
+          echo "plan outcome=$PLAN_OUTCOME exit_code=${PLAN_EXIT_CODE:-unknown}"
           echo "No migration authorization is produced by this workflow."
           exit 0
