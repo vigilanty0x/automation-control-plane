@@ -2,19 +2,12 @@ name: AgentOps adapter evidence
 
 on:
   workflow_dispatch:
-  push:
-    paths:
-      - "src/automation_control_plane/agentops/adapters.py"
-      - "scripts/agentops_adapter_compat_probe.py"
-      - "tests/test_agentops_adapters.py"
-      - "tests/test_agentops_adapter_cli.py"
-      - ".github/workflows/agentops-adapter-evidence.yml"
 
 permissions:
   contents: read
 
 concurrency:
-  group: agentops-adapter-evidence-${{ github.ref }}
+  group: agentops-adapter-evidence
   cancel-in-progress: true
 
 jobs:
