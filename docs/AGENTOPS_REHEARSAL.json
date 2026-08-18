@@ -31,6 +31,7 @@
     "compatibilityContract": "PASS",
     "contractRehearsal": "PASS",
     "consumerInventoryContract": "PASS",
+    "consumerInventoryCollector": "PREPARED",
     "rollbackContract": "PASS",
     "sourceHistoryImport": "NOT_RUN",
     "consumerInventory": "NOT_RUN",
