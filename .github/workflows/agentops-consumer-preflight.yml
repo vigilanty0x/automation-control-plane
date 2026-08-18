@@ -40,6 +40,29 @@ jobs:
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit "$code"
+      - name: Triage coarse code-file import candidates
+        id: triage
+        if: always()
+        continue-on-error: true
+        env:
+          GH_PUBLIC_EVIDENCE_AUTH: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f agentops-consumer-preflight/inventory.json ]]; then
+            echo '{"status":"blocked","reason":"inventory missing"}' | tee agentops-consumer-preflight/triage-summary.json
+            exit 2
+          fi
+          set +e
+          PYTHONPATH=src python scripts/agentops_consumer_triage.py \
+            --inventory agentops-consumer-preflight/inventory.json \
+            --output agentops-consumer-preflight/triage.json \
+            --auth-env GH_PUBLIC_EVIDENCE_AUTH \
+            | tee agentops-consumer-preflight/triage-summary.json
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
       - name: Publish preflight report
         if: always()
         shell: bash
@@ -49,6 +72,14 @@ jobs:
             cat agentops-consumer-preflight/report.md >> "$GITHUB_STEP_SUMMARY"
           else
             printf '%s\n' '' 'Collector did not produce a report.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf '%s\n' '' '## Code-reference triage' '' >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f agentops-consumer-preflight/triage-summary.json ]]; then
+            printf '%s\n' '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat agentops-consumer-preflight/triage-summary.json >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '%s\n' 'Triage did not produce a summary.' >> "$GITHUB_STEP_SUMMARY"
           fi
       - name: Upload bounded preflight evidence
         if: always()
@@ -64,7 +95,10 @@ jobs:
         env:
           SCAN_OUTCOME: ${{ steps.scan.outcome }}
           SCAN_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+          TRIAGE_OUTCOME: ${{ steps.triage.outcome }}
+          TRIAGE_EXIT_CODE: ${{ steps.triage.outputs.exit_code }}
         run: |
           echo "preflight scan outcome=$SCAN_OUTCOME exit_code=${SCAN_EXIT_CODE:-unknown}"
+          echo "triage outcome=$TRIAGE_OUTCOME exit_code=${TRIAGE_EXIT_CODE:-unknown}"
           echo "No migration authorization is produced by this workflow."
           exit 0
