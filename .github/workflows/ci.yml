@@ -85,7 +85,7 @@ jobs:
           path: .compat/agent-quota-simulator
           persist-credentials: false
       - name: Checkout exact agent-session-recorder source evidence
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af1c54 # v4.2.2
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           repository: ${{ github.repository_owner }}/agent-session-recorder
           ref: 2363c4efe0c61158c523a6dfc3d29cb3d7af1c54
