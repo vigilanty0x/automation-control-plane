@@ -4,6 +4,8 @@ Apprentice AI is a local-first, preview-only reference implementation of a digit
 
 Release `0.1.0` deliberately does **not** execute learned actions. It has no keylogger, screenshot capture, browser automation, shell execution, cloud model, telemetry, or runtime dependency. The only bundled learning proof is the synthetic D1–D5 laboratory-export scenario.
 
+**A03 release status:** `0.1.0` remains the product version and the candidate is `PREPARED`, not newly published. `release-policy.a03.v1.json` keeps publication disabled. The supported build range is `setuptools>=83,<84`; controlled A03 evidence uses exact setuptools 83.0.0. A03 does not widen the preview-only execution boundary. See [docs/A03_RELEASE.md](docs/A03_RELEASE.md).
+
 ## What is proved
 
 - A closed Event contract is filtered before persistence.
@@ -78,6 +80,10 @@ python -m build
 ```
 
 The suite covers privacy canaries, raw SQLite/WAL scans, chain tampering and truncation, cross-profile access, hostile archives, TOCTOU snapshots, forged holdouts, stale evidence, idempotency, CSRF/Host/body handling, CLI subprocesses, the dashboard API, and cross-run archive reproducibility.
+
+A03 CI runs that complete suite on Ubuntu, Windows, and macOS across CPython 3.11, 3.12, and 3.13. Each job builds wheel and sdist with the pinned A03 toolchain, verifies the real installed CLI outside checkout, generates SHA-256 checksums and CycloneDX 1.6 evidence, deliberately tampers with a copied wheel and requires fail-closed rejection, and installs the source distribution into a clean virtual environment. The canonical Ubuntu/Python 3.11 wheel is then signed with GitHub/Sigstore SLSA provenance and strictly verified before evidence retention.
+
+Signed provenance is evidence, not publication authorization. A03 creates no tag, GitHub Release, package publication, or repository archive.
 
 ## Project status
 

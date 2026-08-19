@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.0",
+  "repository": "vigilanty0x/apprentice-ai",
+  "product": "Apprentice AI",
+  "distribution": "apprentice-ai",
+  "candidate_version_source": "pyproject.toml:project.version",
+  "state": "PREPARED",
+  "publish_enabled": false,
+  "rollback": {
+    "strategy": "revert-a03-merge-or-restore-last-verified-0.1.0-artifact",
+    "requires_preserved_evidence": true
+  },
+  "requires": [
+    "multi_os_runtime_ci",
+    "wheel_and_sdist",
+    "installed_artifact_smoke",
+    "full_existing_test_suite",
+    "tamper_counterproof",
+    "sha256_checksums",
+    "cyclonedx_sbom",
+    "verified_slsa_provenance",
+    "consumer_compatibility",
+    "explicit_publication_decision",
+    "post_publication_verification"
+  ]
+}

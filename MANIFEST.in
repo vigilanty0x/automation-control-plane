@@ -1,5 +1,9 @@
+include .github/workflows/ci.yml
 include README.md LICENSE NOTICE CHANGELOG.md SECURITY.md PRIVACY.md GOVERNANCE.md CONTRIBUTING.md CODE_OF_CONDUCT.md ARCHITECTURE.md ROADMAP.md THREAT_MODEL.md AGENTS.md
+include release-policy.a03.v1.json
+include requirements-build-a03.txt
 recursive-include docs *.md
+recursive-include scripts *.py
 recursive-include src/apprentice_ai/schemas *.json
 recursive-include src/apprentice_ai/web *.html *.css *.js
 include src/apprentice_ai/py.typed
