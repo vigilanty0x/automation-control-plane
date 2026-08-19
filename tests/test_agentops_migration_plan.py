@@ -80,9 +80,12 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertIn("obtain explicit pilot/adopter completeness attestation", details["next_actions"])
 
     def test_candidate_sha_is_bound_into_evidence(self) -> None:
-        result = plan_migration(self.payload())
-        self.assertEqual(result["details"]["candidate_sha"], CANDIDATE_SHA)
-        self.assertEqual(result["input_sha256"], result["input_sha256"])
+        bound = plan_migration(self.payload())
+        unbound = plan_migration(self.payload(candidate_sha=None))
+        self.assertEqual(bound["details"]["candidate_sha"], CANDIDATE_SHA)
+        self.assertIsNone(unbound["details"]["candidate_sha"])
+        self.assertNotEqual(bound["input_sha256"], unbound["input_sha256"])
+        self.assertNotEqual(bound["evidence_sha256"], unbound["evidence_sha256"])
 
     def test_legacy_payload_without_candidate_sha_remains_supported(self) -> None:
         result = plan_migration(self.payload(candidate_sha=None))
