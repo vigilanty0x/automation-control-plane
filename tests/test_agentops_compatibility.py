@@ -5,9 +5,10 @@ import automation_control_plane
 
 
 class AgentOpsCompatibilityTests(unittest.TestCase):
-    def test_public_api_is_preserved(self):
+    def test_legacy_public_api_is_preserved(self):
         self.assertEqual(agentops.__version__, automation_control_plane.__version__)
-        self.assertEqual(set(agentops.__all__), set(automation_control_plane.__all__))
+        self.assertTrue(set(automation_control_plane.__all__).issubset(set(agentops.__all__)))
+        self.assertIn("routing_evidence", agentops.__all__)
         for name in automation_control_plane.__all__:
             self.assertIs(getattr(agentops, name), getattr(automation_control_plane, name))
 
