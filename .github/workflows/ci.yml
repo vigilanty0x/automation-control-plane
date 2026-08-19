@@ -12,13 +12,15 @@ env:
   SOURCE_DATE_EPOCH: "315532800"
 
 jobs:
-  verify:
-    runs-on: ubuntu-latest
+  candidate:
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -35,3 +37,15 @@ jobs:
           MODEL_ROUTER_COUNTERPROOF_VERIFIED: "1"
         run: |
           python scripts/a03_ci_candidate.py
+      - name: Upload A03 candidate evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: model-router-a03-${{ matrix.os }}-py${{ matrix.python-version }}
+          path: |
+            dist/*.whl
+            dist/*.tar.gz
+            release-evidence-a03/SHA256SUMS.txt
+            release-evidence-a03/model-router.cdx.json
+            release-evidence-a03/RELEASE_EVIDENCE.json
+          if-no-files-found: error
+          retention-days: 14
