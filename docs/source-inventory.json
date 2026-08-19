@@ -6,7 +6,7 @@
   "archiveAuthorized": false,
   "sources": [
     {"repository":"vigilanty0x/automation-control-plane","role":"CANONICAL_TARGET","state":"ACTIVE"},
-    {"repository":"vigilanty0x/agentmesh","role":"SOURCE_MODULE","targetModule":"agentops routing/evidence","state":"PORT_REQUIRED","archiveGate":"BLOCKED"},
+    {"repository":"vigilanty0x/agentmesh","role":"SOURCE_MODULE","targetModule":"agentops.routing_evidence","state":"PORTED_PENDING_VERIFICATION","compatibility":["import agentmesh","agentmesh CLI"],"sourceContractTest":"tests/test_agentmesh_source_contract.py","archiveGate":"BLOCKED"},
     {"repository":"vigilanty0x/agent-dashboard","role":"SOURCE_MODULE","targetModule":"agentops dashboard","state":"PORT_REQUIRED","archiveGate":"BLOCKED"},
     {"repository":"vigilanty0x/agent-handoff","role":"SOURCE_MODULE","targetModule":"agentops handoff","state":"PORT_REQUIRED","archiveGate":"BLOCKED"},
     {"repository":"vigilanty0x/agent-inbox","role":"SOURCE_MODULE","targetModule":"agentops queue/inbox","state":"PORT_REQUIRED","archiveGate":"BLOCKED"},
