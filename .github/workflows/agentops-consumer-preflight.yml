@@ -70,6 +70,8 @@ jobs:
         id: plan
         if: always()
         continue-on-error: true
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
@@ -79,9 +81,11 @@ jobs:
           fi
           python - <<'PY'
           import json
+          import os
           from pathlib import Path
           root = Path("agentops-consumer-preflight")
           payload = {
+              "candidate_sha": os.environ["CANDIDATE_SHA"],
               "consumer_inventory": json.loads((root / "inventory.json").read_text(encoding="utf-8")),
               "triage": json.loads((root / "triage.json").read_text(encoding="utf-8")),
           }
@@ -103,6 +107,7 @@ jobs:
           details = result.get("details", {})
           print(json.dumps({
               "status": result.get("status"),
+              "candidate_sha": details.get("candidate_sha"),
               "formal_migration_gate": details.get("formal_migration_gate"),
               "adapter_candidates": details.get("adapter_candidates", []),
               "observed_runtime_reference_count": details.get("observed_runtime_reference_count"),

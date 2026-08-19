@@ -58,6 +58,12 @@ def _expect_sha256(value: Any, field: str) -> str:
     return value
 
 
+def _expect_git_sha(value: Any, field: str) -> str:
+    if type(value) is not str or not _GIT_SHA.fullmatch(value):
+        raise PacketError(f"{field} must be a lowercase 40-character Git SHA")
+    return value
+
+
 def _proof_summary(
     role: str,
     value: dict[str, Any],
@@ -88,6 +94,7 @@ def _migration_summary(value: dict[str, Any], raw_sha256: str) -> dict[str, Any]
     details = value.get("details")
     if type(details) is not dict:
         raise PacketError("migration plan details are missing")
+    candidate_sha = _expect_git_sha(details.get("candidate_sha"), "migration_plan.details.candidate_sha")
     if details.get("planning_evidence_ready") is not True:
         raise PacketError("migration plan is not technically ready")
     if details.get("formal_migration_gate") != "blocked":
@@ -105,6 +112,7 @@ def _migration_summary(value: dict[str, Any], raw_sha256: str) -> dict[str, Any]
     evidence_sha256 = _expect_sha256(value.get("evidence_sha256"), "migration_plan.evidence_sha256")
     return {
         "status": "passed",
+        "candidate_sha": candidate_sha,
         "evidence_sha256": evidence_sha256,
         "raw_file_sha256": raw_sha256,
         "planning_evidence_ready": True,
@@ -126,10 +134,11 @@ def build_packet(
     core: dict[str, Any],
     core_raw_sha256: str,
 ) -> dict[str, Any]:
-    if not _GIT_SHA.fullmatch(candidate_sha):
-        raise PacketError("candidate_sha must be a lowercase 40-character Git SHA")
+    candidate_sha = _expect_git_sha(candidate_sha, "candidate_sha")
 
     migration = _migration_summary(migration_plan, migration_plan_raw_sha256)
+    if migration["candidate_sha"] != candidate_sha:
+        raise PacketError("migration-plan candidate SHA does not match requested candidate SHA")
     proofs = {
         "compatibility": _proof_summary(
             "compatibility", compatibility, compatibility_raw_sha256

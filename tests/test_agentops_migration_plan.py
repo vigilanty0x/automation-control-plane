@@ -12,8 +12,17 @@ from automation_control_plane.agentops.migration_contracts import MIGRATION_CONT
 from automation_control_plane.agentops.migration_plan import plan_migration
 
 
+CANDIDATE_SHA = "c" * 40
+
+
 class MigrationPlanTests(unittest.TestCase):
-    def payload(self, *, include_pilot: bool = False, verified_import_source: str | None = None) -> dict:
+    def payload(
+        self,
+        *,
+        include_pilot: bool = False,
+        verified_import_source: str | None = None,
+        candidate_sha: str | None = CANDIDATE_SHA,
+    ) -> dict:
         complete_kinds = ["documentation", "fork", "import", "package", "workflow"]
         if include_pilot:
             complete_kinds.append("pilot")
@@ -32,7 +41,7 @@ class MigrationPlanTests(unittest.TestCase):
                     }
                 )
             triage_sources.append({"repository": repository, "candidates": candidates})
-        return {
+        payload = {
             "consumer_inventory": {
                 "scan_scope": {
                     "observed_at": "2026-08-18T16:47:05Z",
@@ -50,11 +59,15 @@ class MigrationPlanTests(unittest.TestCase):
                 "sources": triage_sources,
             },
         }
+        if candidate_sha is not None:
+            payload["candidate_sha"] = candidate_sha
+        return payload
 
     def test_public_static_evidence_can_prepare_but_never_authorize(self) -> None:
         result = plan_migration(self.payload())
         self.assertEqual(result["status"], "passed")
         details = result["details"]
+        self.assertEqual(details["candidate_sha"], CANDIDATE_SHA)
         self.assertTrue(details["static_scope_complete"])
         self.assertTrue(details["triage_complete"])
         self.assertFalse(details["pilot_coverage_complete"])
@@ -65,6 +78,20 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertFalse(details["irreversible_actions_allowed"])
         self.assertTrue(details["named_human_approval_required"])
         self.assertIn("obtain explicit pilot/adopter completeness attestation", details["next_actions"])
+
+    def test_candidate_sha_is_bound_into_evidence(self) -> None:
+        result = plan_migration(self.payload())
+        self.assertEqual(result["details"]["candidate_sha"], CANDIDATE_SHA)
+        self.assertEqual(result["input_sha256"], result["input_sha256"])
+
+    def test_legacy_payload_without_candidate_sha_remains_supported(self) -> None:
+        result = plan_migration(self.payload(candidate_sha=None))
+        self.assertEqual(result["status"], "passed")
+        self.assertIsNone(result["details"]["candidate_sha"])
+
+    def test_invalid_candidate_sha_fails_closed(self) -> None:
+        result = plan_migration(self.payload(candidate_sha="not-a-git-sha"))
+        self.assertEqual(result["status"], "blocked")
 
     def test_only_candidate_adapters_enter_adapter_candidate_list(self) -> None:
         result = plan_migration(self.payload())
@@ -109,6 +136,7 @@ class MigrationPlanTests(unittest.TestCase):
         self.assertEqual(code, 0)
         result = json.loads(output.getvalue())
         self.assertEqual(result["kind"], "migration_plan")
+        self.assertEqual(result["details"]["candidate_sha"], CANDIDATE_SHA)
         self.assertEqual(result["details"]["formal_migration_gate"], "blocked")
         self.assertFalse(result["details"]["migration_performed"])
 

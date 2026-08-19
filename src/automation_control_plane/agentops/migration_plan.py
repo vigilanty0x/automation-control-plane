@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from ._common import ValidationError, blocked, evidence, expect_exact_keys, expect_list, expect_object, expect_str
@@ -7,6 +8,7 @@ from .migration_contracts import MIGRATION_CONTRACTS
 
 _STATIC_COMPLETE_KINDS = {"documentation", "fork", "import", "package", "workflow"}
 _RUNTIME_REFERENCE_KINDS = {"fork", "package", "pilot", "workflow"}
+_GIT_SHA = re.compile(r"^[0-9a-f]{40}$")
 
 
 def _source_map(inventory: dict[str, Any]) -> dict[str, list[dict[str, Any]]]:
@@ -42,10 +44,21 @@ def _triage_map(triage: dict[str, Any]) -> tuple[dict[str, list[dict[str, Any]]]
     return result, triage_complete
 
 
+def _candidate_sha(root: dict[str, Any]) -> str | None:
+    raw = root.get("candidate_sha")
+    if raw is None:
+        return None
+    candidate = expect_str(raw, "$.candidate_sha", minimum=40, maximum=40)
+    if not _GIT_SHA.fullmatch(candidate):
+        raise ValidationError("$.candidate_sha: expected lowercase 40-character Git SHA")
+    return candidate
+
+
 def plan_migration(data: Any) -> dict[str, Any]:
     try:
         root = expect_object(data)
-        expect_exact_keys(root, required=("consumer_inventory", "triage"))
+        expect_exact_keys(root, required=("consumer_inventory", "triage"), optional=("candidate_sha",))
+        candidate_sha = _candidate_sha(root)
         inventory = expect_object(root["consumer_inventory"], "$.consumer_inventory")
         triage = expect_object(root["triage"], "$.triage")
 
@@ -136,6 +149,7 @@ def plan_migration(data: Any) -> dict[str, Any]:
 
         evidence_ready_for_planning = static_scope_complete and triage_complete
         details = {
+            "candidate_sha": candidate_sha,
             "source_plans": source_plans,
             "adapter_candidates": adapter_candidates,
             "observed_runtime_reference_count": observed_runtime_consumers,
@@ -161,10 +175,13 @@ def plan_migration(data: Any) -> dict[str, Any]:
             ],
             "rule": "planning evidence may prepare reversible work but cannot authorize aliases, consumer mutation, redirect, release, rollback, or archive",
         }
+        evidence_input: dict[str, Any] = {"source_plans": source_plans}
+        if candidate_sha is not None:
+            evidence_input["candidate_sha"] = candidate_sha
         return evidence(
             "migration_plan",
             "passed" if evidence_ready_for_planning else "failed",
-            {"source_plans": source_plans},
+            evidence_input,
             details,
         )
     except ValidationError as exc:

@@ -12,6 +12,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: agentops-public-consumer-evidence
+  cancel-in-progress: false
+
 jobs:
   collect:
     runs-on: ubuntu-24.04
@@ -47,6 +51,81 @@ jobs:
           set -e
           echo "exit_code=$code" >> "$GITHUB_OUTPUT"
           exit "$code"
+      - name: Triage coarse code-file import candidates
+        id: triage
+        if: always()
+        continue-on-error: true
+        env:
+          GH_PUBLIC_EVIDENCE_AUTH: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f agentops-consumer-evidence/inventory.json ]]; then
+            echo '{"status":"blocked","reason":"inventory missing"}' | tee agentops-consumer-evidence/triage-summary.json
+            exit 2
+          fi
+          set +e
+          PYTHONPATH=src python scripts/agentops_consumer_triage.py \
+            --inventory agentops-consumer-evidence/inventory.json \
+            --output agentops-consumer-evidence/triage.json \
+            --auth-env GH_PUBLIC_EVIDENCE_AUTH \
+            | tee agentops-consumer-evidence/triage-summary.json
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
+      - name: Derive candidate-bound fail-closed migration plan
+        id: plan
+        if: always()
+        continue-on-error: true
+        env:
+          CANDIDATE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ ! -f agentops-consumer-evidence/inventory.json || ! -f agentops-consumer-evidence/triage.json ]]; then
+            echo '{"status":"blocked","reason":"inventory or triage missing"}' | tee agentops-consumer-evidence/migration-plan-summary.json
+            exit 2
+          fi
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          root = Path("agentops-consumer-evidence")
+          payload = {
+              "candidate_sha": os.environ["CANDIDATE_SHA"],
+              "consumer_inventory": json.loads((root / "inventory.json").read_text(encoding="utf-8")),
+              "triage": json.loads((root / "triage.json").read_text(encoding="utf-8")),
+          }
+          (root / "migration-plan-input.json").write_text(
+              json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False) + "\n",
+              encoding="utf-8",
+          )
+          PY
+          set +e
+          PYTHONPATH=src python -m automation_control_plane.agentops migration-plan \
+            --input agentops-consumer-evidence/migration-plan-input.json \
+            > agentops-consumer-evidence/migration-plan.json
+          code=$?
+          set -e
+          python - <<'PY' | tee agentops-consumer-evidence/migration-plan-summary.json
+          import json
+          from pathlib import Path
+          result = json.loads(Path("agentops-consumer-evidence/migration-plan.json").read_text(encoding="utf-8"))
+          details = result.get("details", {})
+          print(json.dumps({
+              "status": result.get("status"),
+              "candidate_sha": details.get("candidate_sha"),
+              "formal_migration_gate": details.get("formal_migration_gate"),
+              "adapter_candidates": details.get("adapter_candidates", []),
+              "observed_runtime_reference_count": details.get("observed_runtime_reference_count"),
+              "pilot_coverage_complete": details.get("pilot_coverage_complete"),
+              "planning_evidence_ready": details.get("planning_evidence_ready"),
+              "migration_performed": details.get("migration_performed"),
+          }, sort_keys=True, separators=(",", ":")))
+          PY
+          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
+          exit "$code"
       - name: Publish bounded report to the job summary
         if: always()
         shell: bash
@@ -56,6 +135,22 @@ jobs:
           else
             printf '%s\n' '## AgentOps public consumer evidence' '' 'Collector did not produce a report.' >> "$GITHUB_STEP_SUMMARY"
           fi
+          printf '%s\n' '' '## Code-reference triage' '' >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f agentops-consumer-evidence/triage-summary.json ]]; then
+            printf '%s\n' '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat agentops-consumer-evidence/triage-summary.json >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '%s\n' 'Triage did not produce a summary.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf '%s\n' '' '## Candidate-bound migration plan' '' >> "$GITHUB_STEP_SUMMARY"
+          if [[ -f agentops-consumer-evidence/migration-plan-summary.json ]]; then
+            printf '%s\n' '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat agentops-consumer-evidence/migration-plan-summary.json >> "$GITHUB_STEP_SUMMARY"
+            printf '%s\n' '```' >> "$GITHUB_STEP_SUMMARY"
+          else
+            printf '%s\n' 'Migration planner did not produce a summary.' >> "$GITHUB_STEP_SUMMARY"
+          fi
       - name: Upload bounded evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -64,14 +159,32 @@ jobs:
           path: agentops-consumer-evidence/
           if-no-files-found: warn
           retention-days: 30
-      - name: Preserve fail-closed scanner result
+      - name: Preserve fail-closed formal evidence result
         if: always()
         shell: bash
         env:
           SCAN_OUTCOME: ${{ steps.scan.outcome }}
           SCAN_EXIT_CODE: ${{ steps.scan.outputs.exit_code }}
+          TRIAGE_OUTCOME: ${{ steps.triage.outcome }}
+          TRIAGE_EXIT_CODE: ${{ steps.triage.outputs.exit_code }}
+          PLAN_OUTCOME: ${{ steps.plan.outcome }}
+          PLAN_EXIT_CODE: ${{ steps.plan.outputs.exit_code }}
         run: |
+          set -euo pipefail
+          echo "scan outcome=$SCAN_OUTCOME exit_code=${SCAN_EXIT_CODE:-unknown}"
+          echo "triage outcome=$TRIAGE_OUTCOME exit_code=${TRIAGE_EXIT_CODE:-unknown}"
+          echo "plan outcome=$PLAN_OUTCOME exit_code=${PLAN_EXIT_CODE:-unknown}"
           if [[ "$SCAN_OUTCOME" != "success" || "$SCAN_EXIT_CODE" != "0" ]]; then
             echo "Consumer evidence is incomplete or blocked; no migration gate is opened." >&2
             exit 1
           fi
+          if [[ "$TRIAGE_OUTCOME" != "success" || "$TRIAGE_EXIT_CODE" != "0" ]]; then
+            echo "Code-reference triage is incomplete or blocked; no migration gate is opened." >&2
+            exit 1
+          fi
+          if [[ "$PLAN_OUTCOME" != "success" || "$PLAN_EXIT_CODE" != "0" ]]; then
+            echo "Migration planning evidence is incomplete or blocked; no migration gate is opened." >&2
+            exit 1
+          fi
+          echo "Formal public consumer evidence is complete for this candidate SHA."
+          echo "No alias, consumer mutation, migration, release, retirement, or archive authorization is produced."

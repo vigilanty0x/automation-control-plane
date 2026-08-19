@@ -12,12 +12,14 @@ from scripts import agentops_review_packet as packet
 DIGEST = "a" * 64
 RAW = "b" * 64
 CANDIDATE = "c" * 40
+OTHER_CANDIDATE = "d" * 40
 
 
-def _migration_plan(*, pilot_complete: bool = False) -> dict:
+def _migration_plan(*, pilot_complete: bool = False, candidate_sha: str = CANDIDATE) -> dict:
     value = {
         "status": "passed",
         "details": {
+            "candidate_sha": candidate_sha,
             "planning_evidence_ready": True,
             "formal_migration_gate": "blocked",
             "legacy_aliases_activated": False,
@@ -68,6 +70,8 @@ class TechnicalReviewPacketTests(unittest.TestCase):
     def test_packet_is_technically_ready_but_never_authorizes_mutation(self) -> None:
         result = self.build()
         self.assertEqual(result["status"], "passed")
+        self.assertEqual(result["candidate_sha"], CANDIDATE)
+        self.assertEqual(result["migration_plan"]["candidate_sha"], CANDIDATE)
         self.assertTrue(result["technical_readiness"])
         self.assertEqual(result["formal_migration_gate"], "blocked")
         self.assertFalse(result["alias_activation_authorized"])
@@ -127,6 +131,36 @@ class TechnicalReviewPacketTests(unittest.TestCase):
                 core_raw_sha256=RAW,
             )
 
+    def test_rejects_migration_plan_from_different_candidate(self) -> None:
+        with self.assertRaises(packet.PacketError):
+            packet.build_packet(
+                candidate_sha=CANDIDATE,
+                migration_plan=_migration_plan(candidate_sha=OTHER_CANDIDATE),
+                migration_plan_raw_sha256=RAW,
+                compatibility=_proof(),
+                compatibility_raw_sha256=RAW,
+                adapters=_proof(adapter=True),
+                adapters_raw_sha256=RAW,
+                core=_proof(),
+                core_raw_sha256=RAW,
+            )
+
+    def test_rejects_unbound_legacy_migration_plan(self) -> None:
+        plan = _migration_plan()
+        plan["details"].pop("candidate_sha")
+        with self.assertRaises(packet.PacketError):
+            packet.build_packet(
+                candidate_sha=CANDIDATE,
+                migration_plan=plan,
+                migration_plan_raw_sha256=RAW,
+                compatibility=_proof(),
+                compatibility_raw_sha256=RAW,
+                adapters=_proof(adapter=True),
+                adapters_raw_sha256=RAW,
+                core=_proof(),
+                core_raw_sha256=RAW,
+            )
+
     def test_cli_writes_packet_from_files(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -157,6 +191,7 @@ class TechnicalReviewPacketTests(unittest.TestCase):
             )
             self.assertEqual(code, 0)
             written = json.loads(output.read_text(encoding="utf-8"))
+            self.assertEqual(written["candidate_sha"], CANDIDATE)
             self.assertEqual(written["formal_migration_gate"], "blocked")
             self.assertFalse(written["migration_authorized"])
 
