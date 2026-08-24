@@ -1,3 +1,4 @@
+include .portfolio-rehearsal.json
 include .github/workflows/ci.yml
 include AI_ASSISTANCE.md
 include CHANGELOG.md
