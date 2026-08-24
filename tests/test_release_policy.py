@@ -111,13 +111,23 @@ class ReleasePolicyTests(unittest.TestCase):
 
     def test_valid_disabled_fixture_is_accepted(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
-            self.assertFalse(validate_release_policy(Path(tmp)) ["publish_enabled"] if False else False)
+            root = Path(tmp)
+            write_fixture(root)
+            policy = validate_release_policy(root)
+            self.assertFalse(policy["publish_enabled"])
 
     def test_release_command_is_rejected_while_disabled(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             write_fixture(root, workflow_extra="      - run: gh release create v1.0.0\n")
             with self.assertRaisesRegex(ReleasePolicyError, "publication authority"):
+                validate_release_policy(root)
+
+    def test_silent_publish_enable_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, publish_enabled=True)
+            with self.assertRaisesRegex(ReleasePolicyError, "publish_enabled"):
                 validate_release_policy(root)
 
     def test_silent_release_authorization_is_rejected(self) -> None:
@@ -147,13 +157,6 @@ class ReleasePolicyTests(unittest.TestCase):
             write_fixture(root, include_python_314=False)
             with self.assertRaisesRegex(ReleasePolicyError, "Python 3.14"):
                 validate_release_policy(root)
-
-    def test_valid_fixture_is_accepted(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            root = Path(tmp)
-            write_fixture(root)
-            policy = validate_release_policy(root)
-            self.assertFalse(policy["publish_enabled"])
 
 
 if __name__ == "__main__":
