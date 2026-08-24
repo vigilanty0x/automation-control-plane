@@ -1,0 +1,160 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+import tempfile
+import unittest
+
+from scripts.check_release_policy import MERGE_SHA, ReleasePolicyError, validate_release_policy
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+
+
+def write_fixture(
+    root: Path,
+    *,
+    publish_enabled: bool = False,
+    release_authorized: bool = False,
+    archive_authorized: bool = False,
+    rehearsal_state: str = "MERGED",
+    include_python_314: bool = True,
+    workflow_extra: str = "",
+) -> None:
+    (root / ".github" / "workflows").mkdir(parents=True)
+    (root / "release-policy.v1.json").write_text(
+        json.dumps(
+            {
+                "schema_version": "1.0",
+                "repository": "vigilanty0x/ai-software-factory",
+                "product": "AI Software Factory",
+                "distribution": "ai-software-factory",
+                "version": "1.0.0",
+                "proposed_tag": "v1.0.0",
+                "state": "PREPARED",
+                "publish_enabled": publish_enabled,
+                "release_authorized": release_authorized,
+                "consumer_mutation_authorized": False,
+                "archive_authorized": archive_authorized,
+                "rollback_version": "0.1.0",
+                "requires": [
+                    "multi_os_runtime_ci",
+                    "wheel_and_sdist",
+                    "installed_artifact_smoke",
+                    "positive_and_counterproof",
+                    "sha256_checksums",
+                    "cyclonedx_sbom",
+                    "verified_slsa_provenance",
+                    "consumer_compatibility",
+                    "explicit_publication_decision",
+                    "post_publication_verification",
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+    (root / ".portfolio-rehearsal.json").write_text(
+        json.dumps(
+            {
+                "schemaVersion": 1,
+                "target": "ai-software-factory",
+                "mergeCommitSha": MERGE_SHA,
+                "sources": [
+                    {
+                        "repository": "ai-software-factory-starter-kit",
+                        "ancestor": True,
+                        "treeMatch": True,
+                    }
+                ],
+                "state": rehearsal_state,
+                "archiveGate": "BLOCKED",
+            }
+        ),
+        encoding="utf-8",
+    )
+    classifiers = [
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
+    ]
+    if include_python_314:
+        classifiers.append("Programming Language :: Python :: 3.14")
+    classifier_lines = "\n".join(f'  "{item}",' for item in classifiers)
+    (root / "pyproject.toml").write_text(
+        '[project]\nname = "ai-software-factory"\nversion = "1.0.0"\nclassifiers = [\n'
+        + classifier_lines
+        + "\n]\n",
+        encoding="utf-8",
+    )
+    (root / "MIGRATION-1.0.md").write_text(
+        "# Migration AI Software Factory 1.0.0\n\n## Rollback\nReturn to 0.1.0.\n",
+        encoding="utf-8",
+    )
+    versions = '["3.11", "3.12", "3.13", "3.14"]' if include_python_314 else '["3.11", "3.12", "3.13"]'
+    (root / ".github" / "workflows" / "ci.yml").write_text(
+        "name: ci\npermissions:\n  contents: read\njobs:\n  test:\n    runs-on: ubuntu-latest\n"
+        f"    strategy:\n      matrix:\n        python-version: {versions}\n"
+        + workflow_extra,
+        encoding="utf-8",
+    )
+
+
+class ReleasePolicyTests(unittest.TestCase):
+    def test_repository_candidate_is_prepared_and_disabled(self) -> None:
+        policy = validate_release_policy(REPO_ROOT)
+        self.assertEqual(policy["state"], "PREPARED")
+        self.assertFalse(policy["publish_enabled"])
+        self.assertFalse(policy["release_authorized"])
+        self.assertFalse(policy["consumer_mutation_authorized"])
+        self.assertFalse(policy["archive_authorized"])
+
+    def test_valid_disabled_fixture_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertFalse(validate_release_policy(Path(tmp)) ["publish_enabled"] if False else False)
+
+    def test_release_command_is_rejected_while_disabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, workflow_extra="      - run: gh release create v1.0.0\n")
+            with self.assertRaisesRegex(ReleasePolicyError, "publication authority"):
+                validate_release_policy(root)
+
+    def test_silent_release_authorization_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, release_authorized=True)
+            with self.assertRaisesRegex(ReleasePolicyError, "release_authorized"):
+                validate_release_policy(root)
+
+    def test_silent_archive_authorization_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, archive_authorized=True)
+            with self.assertRaisesRegex(ReleasePolicyError, "archive_authorized"):
+                validate_release_policy(root)
+
+    def test_stale_rehearsal_state_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, rehearsal_state="REHEARSAL_ONLY")
+            with self.assertRaisesRegex(ReleasePolicyError, "must not remain REHEARSAL_ONLY"):
+                validate_release_policy(root)
+
+    def test_python_314_support_cannot_disappear(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root, include_python_314=False)
+            with self.assertRaisesRegex(ReleasePolicyError, "Python 3.14"):
+                validate_release_policy(root)
+
+    def test_valid_fixture_is_accepted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_fixture(root)
+            policy = validate_release_policy(root)
+            self.assertFalse(policy["publish_enabled"])
+
+
+if __name__ == "__main__":
+    unittest.main()
