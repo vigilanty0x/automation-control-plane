@@ -1,0 +1,17 @@
+[build-system]
+requires=["setuptools>=68"]
+build-backend="setuptools.build_meta"
+[project]
+name="worktree-conflict-visualizer"
+version="0.1.0"
+description="Offline worktree overlap and conflict visualizer"
+readme="README.md"
+requires-python=">=3.11"
+license={text="Apache-2.0"}
+dependencies=[]
+[project.scripts]
+worktree-conflicts="worktree_conflict_visualizer:main"
+[tool.setuptools]
+package-dir={""="src"}
+[tool.setuptools.packages.find]
+where=["src"]
