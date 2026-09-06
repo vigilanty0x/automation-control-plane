@@ -1,0 +1,15 @@
+{
+  "events": [
+    {
+      "sequence": 1,
+      "kind": "input",
+      "content": "hello"
+    },
+    {
+      "sequence": 2,
+      "kind": "output",
+      "content": "world"
+    }
+  ]
+}
+
