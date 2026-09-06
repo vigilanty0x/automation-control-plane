@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "target": "ai-software-factory",
+  "base": "ai-software-factory",
+  "baseHeadSha": "a054f0f4872471472092059bb02f9eac656f85d1",
+  "mergeCommitSha": "f1a19ede5f7535b922da01ef442034bc296083f9",
+  "sources": [
+    {
+      "repository": "ai-software-factory-starter-kit",
+      "prefix": "packages/ai-software-factory-starter-kit",
+      "headSha": "fc0f59e7f519612a9d2d31f5701c76e3b532a8f5",
+      "treeSha": "6c2bb08cd8d0541497cb5faf25e84a8d2a1ef7ed",
+      "ancestor": true,
+      "treeMatch": true
+    }
+  ],
+  "state": "MERGED",
+  "archiveGate": "BLOCKED",
+  "reason": "The consolidation is already merged at mergeCommitSha. Publication, post-publication verification, consumer/redirect/rollback closure, and explicit human archive approval remain separate blocked gates."
+}
