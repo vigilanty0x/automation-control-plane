@@ -186,11 +186,29 @@ def main() -> int:
         for forbidden in ("import subprocess", "import socket", "import urllib", "import importlib", "os.system", "eval(", "exec("):
             if forbidden in handler_text:
                 problems.append(f"handler registry contains forbidden execution primitive: {forbidden}")
-    cli_paths = list(source_root.glob("*/cli.py")) if source_root.is_dir() else []
-    if len(cli_paths) != 1:
-        problems.append("expected exactly one package CLI")
-    elif not all(marker in cli_paths[0].read_text(encoding="utf-8") for marker in ("MAX_INPUT_BYTES", "allow_nan=False", "MAX_ERROR_MESSAGE")):
-        problems.append("CLI is missing bounded input/output controls")
+    cli_paths = {
+        path.relative_to(ROOT).as_posix()
+        for path in source_root.glob("*/cli.py")
+    } if source_root.is_dir() else set()
+    expected_cli_paths = {
+        "src/agentmesh/cli.py",
+        "src/agentops/cli.py",
+        "src/automation_control_plane/cli.py",
+    }
+    if cli_paths != expected_cli_paths:
+        problems.append("package CLI inventory does not match the three supported compatibility surfaces")
+    legacy_cli = source_root / "automation_control_plane" / "cli.py"
+    if legacy_cli.is_file() and not all(
+        marker in legacy_cli.read_text(encoding="utf-8")
+        for marker in ("MAX_INPUT_BYTES", "allow_nan=False", "MAX_ERROR_MESSAGE")
+    ):
+        problems.append("legacy CLI is missing bounded input/output controls")
+    agentops_cli = source_root / "automation_control_plane" / "agentops" / "cli.py"
+    if agentops_cli.is_file() and not all(
+        marker in agentops_cli.read_text(encoding="utf-8")
+        for marker in ("MAX_INPUT_BYTES", "MAX_OUTPUT_BYTES", "ValidationError")
+    ):
+        problems.append("AgentOps CLI is missing bounded input/output controls")
     if problems:
         print("\n".join(sorted(set(problems))), file=sys.stderr)
         return 1

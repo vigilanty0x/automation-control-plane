@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "automation-control-plane"
 version = "1.0.0"
-description = "Dependency-free governed automation control plane with durable DAG execution, approvals, leases, budgets, and audit."
+description = "Dependency-free governed automation control plane and AgentOps consolidation base with durable DAG execution, approvals, leases, budgets, and audit."
 readme = "README.md"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 dependencies = []
 authors = [{name = "Automation Control Plane contributors"}]
-keywords = ["automation", "workflow", "sqlite", "governance", "dag"]
+keywords = ["automation", "agentops", "workflow", "sqlite", "governance", "dag"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3",
@@ -24,6 +24,7 @@ classifiers = [
 [project.scripts]
 automation-control-plane = "automation_control_plane.cli:main"
 agentops = "automation_control_plane.agentops.cli:main"
+agentmesh = "agentmesh.cli:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
