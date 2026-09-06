@@ -11,6 +11,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 TEXT_SUFFIXES = {".py", ".md", ".toml", ".yml", ".yaml", ".json", ".txt", ".in"}
 SKIP_PARTS = {".git", ".venv", "build", "dist", "__pycache__", ".pytest_cache", ".mypy_cache"}
+ROOT_SCAN_EXCLUSIONS = {"MONOREPO.json", "packages"}
 MAX_TEXT_BYTES = 2_000_000
 MAX_TOTAL_BYTES = 20_000_000
 MAX_ENTROPY_CANDIDATES_PER_FILE = 2_000
@@ -84,13 +85,31 @@ def _is_generated_path(path: Path) -> bool:
     return any(part in SKIP_PARTS or part.endswith(".egg-info") for part in path.parts)
 
 
+def _iter_root_product_paths():
+    """Yield only files and directories owned by the root product.
+
+    Imported projects keep their own security and repository checks under
+    ``packages/``.  The root check deliberately does not descend into that
+    boundary, while the monorepo workflow runs every direct package's native
+    checks separately.  ``MONOREPO.json`` is validated by
+    ``scripts/check_monorepo.py`` instead of being treated as product data.
+    """
+
+    for entry in ROOT.iterdir():
+        if entry.name in ROOT_SCAN_EXCLUSIONS or _is_generated_path(entry):
+            continue
+        yield entry
+        if entry.is_dir() and not entry.is_symlink():
+            yield from entry.rglob("*")
+
+
 def main() -> int:
     problems: list[str] = []
     for name in REQUIRED:
         if not (ROOT / name).is_file():
             problems.append(f"missing {name}")
     total_bytes = 0
-    for path in ROOT.rglob("*"):
+    for path in _iter_root_product_paths():
         if path.is_symlink():
             problems.append(f"symlink is not allowed: {path.relative_to(ROOT)}")
             continue
