@@ -3,7 +3,7 @@ from contextlib import closing, redirect_stdout, redirect_stderr
 from copy import deepcopy
 from dataclasses import replace
 import hashlib
-import importlib.util
+
 import io
 import json
 from pathlib import Path
@@ -17,7 +17,7 @@ from unittest.mock import patch
 from ai_software_factory.cli import main
 from ai_software_factory.engine import FactoryEngine
 from ai_software_factory.evidence import digest_json, verify_export
-from ai_software_factory.executors import DeterministicMockExecutor, SpecProvider, SubprocessExecutor
+from ai_software_factory.executors import DeterministicMockExecutor, SpecProvider
 from ai_software_factory.models import FactorySpec, SpecError
 from ai_software_factory.store import FactoryStore, IdempotencyConflict, StoreError
 from ai_software_factory.state import RunState
