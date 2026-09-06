@@ -1,0 +1,82 @@
+name: AgentOps adapter evidence
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: agentops-adapter-evidence
+  cancel-in-progress: true
+
+jobs:
+  adapter-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Checkout exact agentmesh source evidence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository_owner }}/agentmesh
+          ref: 320f5116f6582519d1609ce87287fd9ff7267eb3
+          path: .compat/agentmesh
+          persist-credentials: false
+      - name: Checkout exact context-window-budgeter source evidence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository_owner }}/context-window-budgeter
+          ref: 35bb3e05d05ad870715b740143c429f08eda25e7
+          path: .compat/context-window-budgeter
+          persist-credentials: false
+      - name: Checkout exact agent-quota-simulator source evidence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository_owner }}/agent-quota-simulator
+          ref: e99000cecf12432365e8ccfc8fa6e4b1d18ad15f
+          path: .compat/agent-quota-simulator
+          persist-credentials: false
+      - name: Checkout exact agent-session-recorder source evidence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository_owner }}/agent-session-recorder
+          ref: 2363c4efe0c61158c523a6dfc3d29cb3d7af1c54
+          path: .compat/agent-session-recorder
+          persist-credentials: false
+      - name: Checkout exact circuit-breaker-lab source evidence
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: ${{ github.repository_owner }}/circuit-breaker-lab
+          ref: 2924dfb6eed8a208788491fa1d50fa6bd99e4359
+          path: .compat/circuit-breaker-lab
+          persist-credentials: false
+      - name: Run SHA-bound candidate adapter counter-proofs
+        shell: bash
+        run: |
+          set -euo pipefail
+          PYTHONPATH=src python scripts/agentops_adapter_compat_probe.py \
+            --agentmesh-root .compat/agentmesh \
+            --context-root .compat/context-window-budgeter \
+            --quota-root .compat/agent-quota-simulator \
+            --session-root .compat/agent-session-recorder \
+            --circuit-root .compat/circuit-breaker-lab \
+            --target-root . \
+            --output agentops-adapter-evidence.json
+          cat agentops-adapter-evidence.json
+      - name: Upload candidate adapter evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: agentops-adapter-evidence-py${{ matrix.python-version }}-${{ github.run_id }}
+          path: agentops-adapter-evidence.json
+          if-no-files-found: error
+          retention-days: 30

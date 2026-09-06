@@ -1,0 +1,10 @@
+{
+  "window_tokens": 128000,
+  "reserve_output_tokens": 8000,
+  "sections": [
+    {"id": "system", "tokens": 4000, "required": true, "priority": 100},
+    {"id": "contract", "tokens": 12000, "required": true, "priority": 90},
+    {"id": "recent-evidence", "tokens": 30000, "required": false, "priority": 80},
+    {"id": "historical-evidence", "tokens": 90000, "required": false, "priority": 10}
+  ]
+}

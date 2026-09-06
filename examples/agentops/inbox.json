@@ -1,0 +1,23 @@
+{
+  "now_epoch_ms": 1787014800000,
+  "jobs": [
+    {
+      "job_id": "release-review",
+      "workflow_id": "synthetic-release",
+      "state": "waiting_approval",
+      "priority": 100,
+      "deadline_epoch_ms": 1787018400000,
+      "approval_required": true,
+      "last_error": null
+    },
+    {
+      "job_id": "expired-worker",
+      "workflow_id": "synthetic-recovery",
+      "state": "running",
+      "priority": 20,
+      "deadline_epoch_ms": 1787014799000,
+      "approval_required": false,
+      "last_error": null
+    }
+  ]
+}

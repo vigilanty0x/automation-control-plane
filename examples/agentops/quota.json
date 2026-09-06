@@ -1,0 +1,33 @@
+{
+  "budgets": {
+    "tokens": 200000,
+    "time_ms": 600000,
+    "micro_cost": 1000000
+  },
+  "tasks": [
+    {
+      "id": "validate",
+      "priority": 100,
+      "required": true,
+      "tokens": 20000,
+      "time_ms": 60000,
+      "micro_cost": 100000
+    },
+    {
+      "id": "review",
+      "priority": 80,
+      "required": false,
+      "tokens": 50000,
+      "time_ms": 120000,
+      "micro_cost": 250000
+    },
+    {
+      "id": "optional-deep-review",
+      "priority": 20,
+      "required": false,
+      "tokens": 180000,
+      "time_ms": 540000,
+      "micro_cost": 900000
+    }
+  ]
+}

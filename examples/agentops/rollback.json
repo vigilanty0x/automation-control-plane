@@ -1,0 +1,22 @@
+{
+  "baseline": {
+    "target_git_sha": "1111111111111111111111111111111111111111",
+    "source_support_state": "active"
+  },
+  "candidate": {
+    "target_git_sha": "2222222222222222222222222222222222222222",
+    "target_state": "REHEARSAL",
+    "redirects_active": false,
+    "aliases_active": false,
+    "consumers_migrated": 0,
+    "consumers_total": 0
+  },
+  "checks": {
+    "baseline_reachable": true,
+    "source_support_restorable": true,
+    "target_disable_rehearsed": true,
+    "redirect_reversal_rehearsed": true,
+    "alias_reversal_rehearsed": true,
+    "consumer_recovery_rehearsed": true
+  }
+}

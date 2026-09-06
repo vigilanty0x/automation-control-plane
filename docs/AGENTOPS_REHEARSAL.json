@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "target": "agentops",
+  "status": "REHEARSAL",
+  "selectedBase": "automation-control-plane",
+  "selectedBaseMainSha": "42920b932e1eeb9acf143907a7283453cf03eb81",
+  "rehearsalParentSha": "7cae160f0e6eb88c19081627eb5fd3b545961f6f",
+  "observedAt": "2026-08-18T01:45:00Z",
+  "expiresAt": "2026-09-17T01:45:00Z",
+  "implementedModules": [
+    "routing_evidence",
+    "context_budgets",
+    "quota_simulation",
+    "session_evidence",
+    "circuit_breakers",
+    "operator_inbox",
+    "compatibility_interface_inventory",
+    "consumer_inventory_contract",
+    "consumer_inventory_collector",
+    "rollback_contract"
+  ],
+  "deduplicatedIntoCore": [
+    "approvals_queue",
+    "budgets",
+    "idempotency",
+    "retry_policy",
+    "task_graph",
+    "timeouts"
+  ],
+  "gates": {
+    "sourceShaInventory": "PASS",
+    "collisionReport": "PASS",
+    "compatibilityContract": "PASS",
+    "compatibilityInterfaceInventory": "PASS",
+    "legacyAliasActivation": "BLOCKED",
+    "contractRehearsal": "PASS",
+    "consumerInventoryContract": "PASS",
+    "consumerInventoryCollector": "PREPARED",
+    "rollbackContract": "PASS",
+    "sourceHistoryImport": "NOT_RUN",
+    "consumerInventory": "NOT_RUN",
+    "humanDecision": "BLOCKED",
+    "release": "BLOCKED",
+    "consumerMigration": "BLOCKED",
+    "redirect": "BLOCKED",
+    "rollback": "BLOCKED",
+    "sourceArchive": "BLOCKED"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "session_id": "public-rehearsal",
+  "events": [
+    {
+      "event_id": "planned",
+      "actor": "planner",
+      "type": "planned",
+      "at": "2026-08-18T01:00:00Z",
+      "data": {"scope": "synthetic"}
+    },
+    {
+      "event_id": "verified",
+      "actor": "reviewer",
+      "type": "verified",
+      "at": "2026-08-18T01:05:00Z",
+      "data": {"tests_passed": 24}
+    }
+  ]
+}

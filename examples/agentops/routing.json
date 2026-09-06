@@ -1,0 +1,25 @@
+{
+  "agents": [
+    {
+      "id": "planner",
+      "healthy": true,
+      "owner": "ops",
+      "capabilities": ["plan"]
+    },
+    {
+      "id": "worker",
+      "healthy": true,
+      "owner": "runtime",
+      "capabilities": ["execute", "report"]
+    }
+  ],
+  "routes": [
+    {
+      "source": "planner",
+      "target": "worker",
+      "capability": "execute",
+      "owner": "runtime"
+    }
+  ],
+  "required_capabilities": ["execute"]
+}
