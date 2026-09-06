@@ -1,0 +1,18 @@
+{
+  "task_id": "task-public-001",
+  "idempotency_key": "public-example-v1",
+  "title": "Build and verify a generic parser",
+  "required_capabilities": ["python", "testing"],
+  "required_permissions": ["read", "write"],
+  "budget_usd": 2.0,
+  "max_latency_ms": 2500,
+  "context_tokens": 16000,
+  "scope": ["src/parser.py", "tests/test_parser.py"],
+  "acceptance_criteria": [
+    "unit and integration tests pass",
+    "decision report is produced"
+  ],
+  "risk": "low",
+  "max_attempts": 2,
+  "metadata": {"fixture": "synthetic"}
+}

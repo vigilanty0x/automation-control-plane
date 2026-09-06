@@ -1,0 +1,11 @@
+{
+  "commit_sha": "dddddddddddddddddddddddddddddddddddddddd",
+  "tests": ["python -m unittest discover:pass"],
+  "artifacts": ["artifacts/decision-report.json"],
+  "criteria": {
+    "unit and integration tests pass": true,
+    "decision report is produced": true
+  },
+  "produced_by": "forge",
+  "notes": ["Synthetic public example only."]
+}
