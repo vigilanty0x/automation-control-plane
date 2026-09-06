@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Apprentice AI — Console locale</title>
+  <link rel="stylesheet" href="/app.css">
+  <link rel="stylesheet" href="/components.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="mark">A</span><span>Apprentice AI</span></div>
+    <div class="status"><span class="pulse"></span>Local · aperçu uniquement</div>
+  </header>
+  <main>
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Atelier explicable</p>
+        <h1>Des traces permises aux routines vérifiables.</h1>
+        <p class="lede">Observez le pipeline synthétique, confirmez une règle, inspectez sa mémoire et prévisualisez le Skill IR — sans exécuter la moindre action.</p>
+      </div>
+      <button id="run-demo" class="primary">Préparer D1–D5 pour validation</button>
+    </section>
+    <section class="controls" aria-label="Sélection du profil">
+      <label for="profile">Profil</label>
+      <select id="profile"><option value="">Chargement…</option></select>
+      <button id="refresh" class="secondary">Actualiser</button>
+      <span id="notice" role="status" aria-live="polite"></span>
+    </section>
+    <nav class="tabs" aria-label="Vues">
+      <button class="tab active" data-panel="overview">Vue d’ensemble</button>
+      <button class="tab" data-panel="timeline">Chronologie</button>
+      <button class="tab" data-panel="learning">Apprentissage</button>
+      <button class="tab" data-panel="governance">Gouvernance</button>
+    </nav>
+    <section id="overview" class="panel active">
+      <div id="metrics" class="metrics"></div>
+      <div class="card"><h2>Capacités déclarées</h2><pre id="capabilities" class="code loading">Chargement…</pre></div>
+    </section>
+    <section id="timeline" class="panel">
+      <div class="card"><div class="card-head"><h2>Intégrité des sessions</h2><span class="badge">Vérification réelle</span></div><div id="chains" class="list empty">Sélectionnez un profil.</div></div>
+      <div class="card timeline-card"><div class="card-head"><h2>Événements minimisés</h2><span class="badge">Chaîne SHA-256</span></div><div id="events" class="list empty">Sélectionnez un profil.</div></div>
+    </section>
+    <section id="learning" class="panel">
+      <div class="grid">
+        <div class="card"><h2>Routines</h2><div id="routines" class="list empty">Aucune donnée.</div></div>
+        <div class="card"><h2>Questions</h2><div id="questions" class="list empty">Aucune donnée.</div></div>
+        <div class="card"><h2>Mémoire</h2><div id="memories" class="list empty">Aucune donnée.</div></div>
+        <div class="card"><h2>Skills</h2><div id="skills" class="list empty">Aucune donnée.</div></div>
+        <div class="card"><h2>Aperçu Skill IR</h2><pre id="preview" class="code empty">Choisissez « Prévisualiser » sur un skill.</pre></div>
+      </div>
+    </section>
+    <section id="governance" class="panel">
+      <div class="grid">
+        <div class="card"><h2>Imports en quarantaine</h2><div id="imports" class="list empty">Aucune donnée.</div></div>
+        <div class="card"><h2>Journal d’audit</h2><div id="audit" class="list empty">Aucune donnée.</div></div>
+      </div>
+    </section>
+  </main>
+  <footer>Release 0.1.0 · zéro dépendance runtime · aucune exécution réelle</footer>
+  <script src="/app.js" defer></script>
+</body>
+</html>

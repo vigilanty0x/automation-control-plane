@@ -1,0 +1,6 @@
+.item details { margin-top: 10px; color: var(--muted); font-size: .78rem; }
+.item pre { white-space: pre-wrap; word-break: break-word; }
+.actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.mini { font-size: .75rem; padding: 6px 9px; }
+.mini.accent { border-color: rgba(123,242,189,.45); color: var(--mint); }
+.timeline-card { margin-top: 14px; }

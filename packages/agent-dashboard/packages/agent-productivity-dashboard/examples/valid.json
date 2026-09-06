@@ -1,0 +1,8 @@
+{
+  "agent": "agent-a",
+  "completed": 10,
+  "failed": 1,
+  "retries": 2,
+  "elapsed_ms": 5000
+}
+

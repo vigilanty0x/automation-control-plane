@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0",
+  "global_limit": {"calls": 100, "time_ms": 600000, "tokens": 500000},
+  "agents": [
+    {
+      "agent_id": "writer",
+      "owner": "synthetic-owner",
+      "capabilities": ["code"],
+      "permissions": ["local"],
+      "limit": {"calls": 10, "time_ms": 60000, "tokens": 50000},
+      "max_retries": 2
+    }
+  ],
+  "missions": [
+    {
+      "mission_id": "synthetic-task",
+      "agent_id": "writer",
+      "required_capability": "code",
+      "required_permission": "local",
+      "limit": {"calls": 5, "time_ms": 30000, "tokens": 20000}
+    }
+  ],
+  "operations": [
+    {
+      "action": "reserve",
+      "operation_id": "control-reserve",
+      "mission_id": "synthetic-task",
+      "amount": {"calls": 1, "time_ms": 5000, "tokens": 2000}
+    }
+  ]
+}
+

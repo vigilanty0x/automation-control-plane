@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "target": "agent-worktrees",
+  "base": "agent-worktrees",
+  "baseHeadSha": "91ea392eed9b04deb6660e3dac6dfc3307a2a2b0",
+  "sources": [
+    {
+      "repository": "worktree-conflict-visualizer",
+      "prefix": "packages/worktree-conflict-visualizer",
+      "headSha": "2ba81e221fd02e31ddec4a05133383e164918b54",
+      "treeSha": "d80e30cabe18d922c3c8fc782ad3a94fce081111",
+      "ancestor": true,
+      "treeMatch": true
+    }
+  ],
+  "state": "REHEARSAL_ONLY",
+  "archiveGate": "BLOCKED",
+  "reason": "Tests, compatibility, release, redirect, consumer, rollback, and human gates are not all verified."
+}

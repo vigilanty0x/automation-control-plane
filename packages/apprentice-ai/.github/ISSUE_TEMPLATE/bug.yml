@@ -1,0 +1,26 @@
+name: Bug report
+description: Report a reproducible functional defect using synthetic data.
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include secrets, personal data, or untrusted archives. Use private vulnerability reporting for security issues.
+  - type: input
+    id: version
+    attributes:
+      label: Version
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Synthetic reproduction
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected and actual result
+    validations:
+      required: true

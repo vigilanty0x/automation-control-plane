@@ -1,0 +1,287 @@
+{
+  "delete_authorized": false,
+  "schema_version": 1,
+  "status": "LOCAL_PREPARATION",
+  "target": {
+    "kind": "PRODUCT",
+    "repository": "vigilanty0x/automation-control-plane",
+    "sources": [
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-budgeter",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "cfa9c0a8830f3e2e3a11602da590e347f8483d2f",
+          "tree": "03a4e70b48dcb2fcc237654a8f473b59f0265b67",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-budgeter"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-dashboard",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "43014e5f0c8613caf345bf767dc74a915dbbd7e8",
+          "tree": "e5658fb4f5643c045d8980eeda67e896a4e2a05b",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-dashboard"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-handoff",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "afa3baca55fd7081cd929d3bde5b106ef2577630",
+          "tree": "ef1fad925cc7cfbf28f03dfd2026814cc818e390",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-handoff"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-inbox",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "748f237659f98a2a49478aa58913e71e59a03433",
+          "tree": "8e57e6d11a80fbbfb6e41940a9e44e5f55f983d9",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-inbox"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-productivity-dashboard",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "007b36534ec0b428772807fc45168ef5ad69d2b5",
+          "tree": "56bad3557597594f415b4bcae837c607e748e6bd",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-dashboard/packages/agent-productivity-dashboard"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-quota-simulator",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "e99000cecf12432365e8ccfc8fa6e4b1d18ad15f",
+          "tree": "6261d35d50e5a064974d40cfc7951314027c032d",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-quota-simulator"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-retry-kit",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "38f97aaa6796fda6956202aad9086e3e5e8ada9f",
+          "tree": "5b909852889a65d48bf3a4f77c2d03bcbc2754be",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-retry-kit"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-session-recorder",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "2363c4efe0c61158c523a6dfc3d29cb3d7af1c54",
+          "tree": "8df570094b197c503b48c23be4e0a1050f9de150",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-session-recorder"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agent-worktrees",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "c1adc5212fdb27b26dbf8f63b2aefd0807a12c3a",
+          "tree": "5d6ccbaa0d6660561c9ca408a2f5d7e9f1bf2a6e",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-worktrees"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/agentmesh",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "320f5116f6582519d1609ce87287fd9ff7267eb3",
+          "tree": "441aa81ba7512752e30821e8dc780bc9b1bd5618",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agentmesh"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/ai-software-factory",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "a9075ede88fbb46e5df9bc67b6dc3a0a297f8232",
+          "tree": "0f7a749978dacfa1fa3e0f22c7db4b399f010c78",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/ai-software-factory"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/ai-software-factory-starter-kit",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "fc0f59e7f519612a9d2d31f5701c76e3b532a8f5",
+          "tree": "6c2bb08cd8d0541497cb5faf25e84a8d2a1ef7ed",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/ai-software-factory/packages/ai-software-factory-starter-kit"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/apprentice-ai",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "f0c6d7b3498ed5b1ea1a1d23d4285845d11d42fd",
+          "tree": "08741e5a38d6cfe36c961628cce21b6f21466444",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/apprentice-ai"
+      },
+      {
+        "disposition": "KEEP",
+        "repository": "vigilanty0x/automation-control-plane",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "f2c3919926ac723fe41f79a960ef6e56aff149a8",
+          "tree": "16b9bae2745e9428ec7cef5ed49df3966b7ebf4a",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "."
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/circuit-breaker-lab",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "2924dfb6eed8a208788491fa1d50fa6bd99e4359",
+          "tree": "065022e319c108733f7415001d21d9ffc09995d0",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/circuit-breaker-lab"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/context-window-budgeter",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "35bb3e05d05ad870715b740143c429f08eda25e7",
+          "tree": "4e0966123de5d22146811fc03fb97a02e15d6ee2",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/context-window-budgeter"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/handoff-markdown-cli",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "23098efac6d7eab71680d3e03e59b0c879cb9fb0",
+          "tree": "2be90fd93a5a9e58dca54d953569204957b763b3",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-handoff/packages/handoff-markdown-cli"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/human-in-the-loop-queue",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "db281bf7ff971a2fd4ca6af9e495b2c0fd6cd30b",
+          "tree": "843b56604f7eba859e4dc060ab0dba632684fd24",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/human-in-the-loop-queue"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/idempotency-kit",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "80e78a4d9b73aeabb200578c2ecb5090f31a410f",
+          "tree": "fe18a82ce91f4f84169afc08f2f6c4b85f678b06",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/idempotency-kit"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/model-router",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "bb44b3fe4e192fb0787d5731915a294de1284e21",
+          "tree": "bd18f8e3488651e0ee4276d5845fbffccc0bc44c",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/model-router"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/taskgraph",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "937abf0d096cb1f6ff48aa09b8dd8a69d9a36c0d",
+          "tree": "8343aed1edf001ac631b22d5000343c5b2afddf4",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/taskgraph"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/timeout-toolkit",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "a2a053e39a6eaa40cde7d81f87ee4838cf562583",
+          "tree": "6b8b7821c4a157106d578de635166fd24d76e0c8",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/timeout-toolkit"
+      },
+      {
+        "disposition": "ABSORB",
+        "repository": "vigilanty0x/worktree-conflict-visualizer",
+        "source": {
+          "archived": false,
+          "default_branch": "main",
+          "head": "2ba81e221fd02e31ddec4a05133383e164918b54",
+          "tree": "d80e30cabe18d922c3c8fc782ad3a94fce081111",
+          "visibility": "PUBLIC"
+        },
+        "target_path": "packages/agent-worktrees/packages/worktree-conflict-visualizer"
+      }
+    ]
+  }
+}

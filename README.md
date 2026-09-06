@@ -25,6 +25,61 @@ Highlights:
 - machine-readable CLI plus an optional loopback-only read-only HTTP API/dashboard;
 - compatibility with the original `run(data)`, `simulate(job, target)`, and `transition(...)` APIs.
 
+## Concrete monorepo
+
+This repository is the concrete home of 23 AgentOps tools: the root Automation
+Control Plane product, 18 directly imported projects, and four satellites that
+were already nested in their parent projects. Imports retain their source Git
+history. `MONOREPO.json` binds every source repository and commit to its local
+path; it explicitly does not authorize deleting any source repository.
+
+The root package remains a narrow, dependency-free control plane. Imported
+projects keep their own packaging, tests, security boundaries, and repository
+checks under `packages/`; being colocated here does not silently make them
+runtime dependencies of the root product.
+
+### Root product
+
+| Tool | Path | Responsibility |
+| --- | --- | --- |
+| `automation-control-plane` | `.` | Durable governed workflows, approvals, leases, budgets, retries, recovery, and audit. |
+
+### Directly imported projects
+
+| Tool | Path | Responsibility |
+| --- | --- | --- |
+| `ai-software-factory` | `packages/ai-software-factory` | Evidence-gated software missions and reusable factory workflows. |
+| `agent-worktrees` | `packages/agent-worktrees` | Isolated Git worktrees, ownership, and conflict-safe coordination. |
+| `agent-handoff` | `packages/agent-handoff` | Deterministic, machine-readable agent handoffs. |
+| `agent-dashboard` | `packages/agent-dashboard` | Browser dashboard for agent runs, cost, evidence, and provenance. |
+| `apprentice-ai` | `packages/apprentice-ai` | Local-first, preview-only learning of explainable routines. |
+| `model-router` | `packages/model-router` | Evidence-aware model routing with durable queueing. |
+| `timeout-toolkit` | `packages/timeout-toolkit` | Fail-closed timeout and deadline planning. |
+| `taskgraph` | `packages/taskgraph` | Durable agent DAGs with ownership, retries, and resume. |
+| `circuit-breaker-lab` | `packages/circuit-breaker-lab` | Reproducible circuit-breaker state experiments. |
+| `agentmesh` | `packages/agentmesh` | Multi-agent route, health, and ownership validation. |
+| `idempotency-kit` | `packages/idempotency-kit` | Deterministic idempotency keys and replay checks. |
+| `agent-retry-kit` | `packages/agent-retry-kit` | Bounded retry policies and exhaustion evidence. |
+| `agent-inbox` | `packages/agent-inbox` | Durable SQLite inbox with leases and recovery. |
+| `agent-budgeter` | `packages/agent-budgeter` | Fail-closed resource budgets for agent missions. |
+| `human-in-the-loop-queue` | `packages/human-in-the-loop-queue` | Expiring human approvals with audit history. |
+| `context-window-budgeter` | `packages/context-window-budgeter` | Explicit allocation of bounded model context. |
+| `agent-session-recorder` | `packages/agent-session-recorder` | Tamper-evident, anonymizable session recording. |
+| `agent-quota-simulator` | `packages/agent-quota-simulator` | Offline simulation of provider quota and admission. |
+
+### Nested satellites
+
+| Tool | Path | Parent project |
+| --- | --- | --- |
+| `ai-software-factory-starter-kit` | `packages/ai-software-factory/packages/ai-software-factory-starter-kit` | `ai-software-factory` |
+| `agent-productivity-dashboard` | `packages/agent-dashboard/packages/agent-productivity-dashboard` | `agent-dashboard` |
+| `handoff-markdown-cli` | `packages/agent-handoff/packages/handoff-markdown-cli` | `agent-handoff` |
+| `worktree-conflict-visualizer` | `packages/agent-worktrees/packages/worktree-conflict-visualizer` | `agent-worktrees` |
+
+Install or work on a child project from its own directory, for example
+`python -m pip install ./packages/agent-worktrees`. The Node-based dashboard
+uses `npm ci` from `packages/agent-dashboard`.
+
 ## Non-goals
 
 - It is not an authentication provider. A caller must authenticate the principal before passing its name to the programmatic API or local CLI.
@@ -179,11 +234,20 @@ Detailed runbooks, failure behavior, backup restoration, and SQLite constraints 
 Run the full local contract:
 
 ```bash
-python -m unittest discover -s tests -v
-python scripts/check.py
+python scripts/check_monorepo.py
+PYTHONPATH=src python scripts/check.py
+PYTHONPATH=src python -m unittest discover -s tests -v
 python -m pip install "build==1.2.2.post1" "setuptools==80.9.0" "wheel==0.45.1"
 python -m build --no-isolation
 ```
+
+The first command validates all 23 manifest entries, their recorded source
+trees, and the presence of every source commit in this repository's history.
+The root boundary check intentionally does not recurse into `packages/` and
+does not scan `MONOREPO.json`; the separate monorepo workflow compensates by
+running the native checks and tests for all 18 direct imports. It uses the full
+A03 candidate gates for `apprentice-ai` and `model-router`, and the locked npm
+lint/test flow for `agent-dashboard`.
 
 The test suite covers the compatibility API, schema strictness, DAG cycles, idempotency, concurrent submission/claim, trusted handler capability binding, approval version binding/rejection/self-approval, optimistic conflicts, retries, terminal fencing, lock-delayed clocks, crash recovery, stale leases, deadlines, dry-run isolation, atomic budget reservations, kill epochs, starvation resistance, outbox repair, audit/result/tail tampering, no-follow backup/validated restore, CLI flows, and read-only HTTP behavior.
 

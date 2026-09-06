@@ -1,0 +1,14 @@
+{
+  "title": "Example handoff",
+  "summary": "Ready for review.",
+  "completed": [
+    "Implemented validation"
+  ],
+  "pending": [],
+  "evidence": [
+    "Unit tests pass"
+  ],
+  "risks": [],
+  "next_owner": "reviewer"
+}
+

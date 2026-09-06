@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/memory.schema.json",
+  "title": "MemoryAssertion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "version", "type", "subject", "predicate", "object", "status", "provenance", "privacy", "created_at"],
+  "properties": {
+    "id": {"type": "string", "pattern": "^mem_"}, "version": {"type": "integer", "minimum": 1},
+    "supersedes": {"type": ["string", "null"]}, "type": {"enum": ["episodic", "semantic", "procedural", "policy", "negative", "provenance"]},
+    "subject": {"type": "string"}, "predicate": {"type": "string"}, "object": {},
+    "status": {"enum": ["candidate", "confirmed", "invalidated"]}, "confidence": {"type": "object"},
+    "scope": {"type": "object"}, "provenance": {"type": "object"}, "privacy": {"type": "object"}, "created_at": {"type": "string"},
+    "conflicts": {"type": "array", "items": {"type": "string"}}, "invalidation_reason": {"type": "string"}
+  }
+}

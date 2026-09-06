@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "target": "model-router",
+  "base": "model-router",
+  "baseHeadSha": "141496b3c601234becbf928a7ea99a26b52571a7",
+  "sources": [],
+  "state": "REHEARSAL_ONLY",
+  "archiveGate": "BLOCKED",
+  "reason": "Tests, compatibility, release, redirect, consumer, rollback, and human gates are not all verified."
+}

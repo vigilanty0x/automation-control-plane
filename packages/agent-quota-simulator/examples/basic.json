@@ -1,0 +1,17 @@
+{
+  "budget": {
+    "tokens": 1000,
+    "seconds": 60,
+    "cost_micros": 5000
+  },
+  "tasks": [
+    {
+      "id": "task-a",
+      "tokens": 100,
+      "seconds": 5,
+      "cost_micros": 200,
+      "priority": 10
+    }
+  ]
+}
+

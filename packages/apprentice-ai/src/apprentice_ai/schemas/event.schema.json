@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/event.schema.json",
+  "title": "EventInput",
+  "type": "object",
+  "additionalProperties": false,
+  "description": "Adapter input before privacy filtering. Identifiers, timestamp and source may be assigned by the trusted ingestion boundary.",
+  "required": ["application", "action"],
+  "properties": {
+    "event_id": {"type": "string", "pattern": "^evt_[A-Za-z0-9][A-Za-z0-9_.-]{2,95}$"},
+    "timestamp": {"type": "string", "pattern": "Z$", "maxLength": 64},
+    "source": {"type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,119}$"},
+    "application": {
+      "type": "object", "additionalProperties": false, "required": ["id"],
+      "properties": {"id": {"type": "string", "maxLength": 120}, "version": {"type": "string", "maxLength": 120}}
+    },
+    "action": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "kind": {"type": "string", "maxLength": 120}, "target_role": {"type": "string", "maxLength": 120},
+        "target_label": {"type": "string", "maxLength": 240}, "value": {"type": "string", "maxLength": 20000},
+        "text": {"type": "string", "maxLength": 20000}, "content": {"type": "string", "maxLength": 20000}
+      }
+    },
+    "context": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "demo_id": {"type": "string"}, "dataset_id": {"type": "string"}, "climate": {"type": "string"},
+        "split": {"type": "string"}, "synthetic": {"type": "boolean"}, "url": {"type": "string", "maxLength": 2048},
+        "password": {}, "token": {}, "api_key": {}, "credential": {}
+      }
+    }
+  }
+}

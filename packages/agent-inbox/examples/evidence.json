@@ -1,0 +1,7 @@
+{
+  "summary": "Synthetic fixture validated.",
+  "commits": [{"sha": "1111111111111111111111111111111111111111", "repository": "synthetic/example"}],
+  "tests": [{"name": "unit", "outcome": "passed", "command": "python -m unittest"}],
+  "artifacts": [{"name": "report", "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "path": "artifacts/report.json"}]
+}
+

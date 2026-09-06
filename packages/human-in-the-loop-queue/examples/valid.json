@@ -1,0 +1,6 @@
+{
+  "request_id": "req-1",
+  "expires_at": "2099-12-31T00:00:00Z",
+  "decision": "pending",
+  "audit": [{"action": "created", "actor": "review-queue", "at": "2026-08-14T00:00:00Z"}]
+}

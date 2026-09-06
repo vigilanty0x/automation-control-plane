@@ -1,0 +1,10 @@
+{
+  "agent_id": "worker",
+  "capabilities": ["python", "review"],
+  "permissions": ["read", "write"],
+  "ownership": ["demo"],
+  "max_running": 1,
+  "max_lease_seconds": 300,
+  "active": true
+}
+

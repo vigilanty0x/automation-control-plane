@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "target": "agent-dashboard",
+  "base": "agent-dashboard",
+  "baseHeadSha": "d9d91250ef15b3cb3d589502cc991a3616d39a26",
+  "sources": [
+    {
+      "repository": "agent-productivity-dashboard",
+      "prefix": "packages/agent-productivity-dashboard",
+      "headSha": "007b36534ec0b428772807fc45168ef5ad69d2b5",
+      "treeSha": "56bad3557597594f415b4bcae837c607e748e6bd",
+      "ancestor": true,
+      "treeMatch": true
+    }
+  ],
+  "state": "REHEARSAL_ONLY",
+  "archiveGate": "BLOCKED",
+  "reason": "Tests, compatibility, release, redirect, consumer, rollback, and human gates are not all verified."
+}

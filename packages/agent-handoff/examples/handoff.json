@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0",
+  "handoff_id": "public-demo-handoff",
+  "mission_id": "public-demo-mission",
+  "sequence": 2,
+  "state": "waiting",
+  "from_agent": "implementation-agent",
+  "to_agent": "review-agent",
+  "owner": "review-agent",
+  "created_at": "2026-08-15T00:00:00Z",
+  "path_scope": ["src/example.py", "tests/test_example.py"],
+  "capabilities": ["python", "review"],
+  "permissions": ["read", "test"],
+  "limits": {"max_retries": 2, "max_runtime_seconds": 300},
+  "criteria": [
+    {"criterion_id": "unit-tests", "description": "Unit tests pass", "met": true},
+    {"criterion_id": "independent-review", "description": "Independent review is complete", "met": false}
+  ],
+  "evidence": [
+    {
+      "evidence_id": "unit-test-run",
+      "kind": "test",
+      "uri": "artifact://public-demo/tests",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "summary": "Synthetic unit tests passed"
+    }
+  ],
+  "open_items": [
+    {
+      "item_id": "review-needed",
+      "severity": "medium",
+      "kind": "escalation",
+      "description": "A second agent must verify the evidence before done."
+    }
+  ],
+  "summary": "Implementation is complete; independent evidence review remains visible."
+}
+

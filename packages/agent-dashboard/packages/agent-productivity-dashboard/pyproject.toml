@@ -1,0 +1,21 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-productivity-dashboard"
+version = "0.1.0"
+description = "Calculate dashboard metrics from bounded caller-supplied counters."
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "Apache-2.0"}
+dependencies = []
+
+[project.scripts]
+agent-productivity-dashboard = "agent_productivity_dashboard.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

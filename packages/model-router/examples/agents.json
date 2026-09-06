@@ -1,0 +1,44 @@
+[
+  {
+    "agent_id": "atlas",
+    "owner": "analysis-team",
+    "capabilities": ["python", "testing"],
+    "permissions": ["read", "write"],
+    "cost_per_1k_tokens_usd": 0.01,
+    "p95_latency_ms": 750,
+    "context_window_tokens": 64000,
+    "historical_success_rate": 0.88,
+    "active": true,
+    "current_load": 0,
+    "max_concurrency": 2,
+    "metadata": {"tier": "balanced"}
+  },
+  {
+    "agent_id": "forge",
+    "owner": "delivery-team",
+    "capabilities": ["documentation", "python", "testing"],
+    "permissions": ["read", "write"],
+    "cost_per_1k_tokens_usd": 0.018,
+    "p95_latency_ms": 900,
+    "context_window_tokens": 128000,
+    "historical_success_rate": 0.96,
+    "active": true,
+    "current_load": 0,
+    "max_concurrency": 3,
+    "metadata": {"tier": "reliable"}
+  },
+  {
+    "agent_id": "sentry",
+    "owner": "review-team",
+    "capabilities": ["security", "testing"],
+    "permissions": ["high_risk", "read"],
+    "cost_per_1k_tokens_usd": 0.025,
+    "p95_latency_ms": 1200,
+    "context_window_tokens": 64000,
+    "historical_success_rate": 0.97,
+    "active": true,
+    "current_load": 0,
+    "max_concurrency": 1,
+    "metadata": {"tier": "specialist"}
+  }
+]

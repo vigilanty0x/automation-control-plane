@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agent-worktrees"
+version = "0.1.0"
+description = "Safely allocate isolated Git worktrees with path ownership and evidence gates."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "vigilanty0x" }]
+keywords = ["git", "worktree", "agents", "orchestration", "ownership"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+dependencies = []
+
+[project.scripts]
+agent-worktrees = "agent_worktrees.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
