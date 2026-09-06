@@ -15,7 +15,9 @@ import sqlite3
 import time
 from typing import Any, Callable, Iterable
 
+from .approvals import APPROVAL_SCHEMA, ApprovalError, ApprovalStoreMixin, _time
 from .models import FactorySpec
+from .quotas import QUOTA_SCHEMA, QuotaStoreMixin
 from .state import (
     RunState,
     TaskState,
@@ -142,7 +144,7 @@ CREATE TABLE IF NOT EXISTS receipts (
 """
 
 
-class FactoryStore:
+class FactoryStore(ApprovalStoreMixin, QuotaStoreMixin):
     def __init__(
         self,
         database: str | Path,
@@ -162,11 +164,15 @@ class FactoryStore:
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path, timeout=30.0, isolation_level=None)
-        connection.row_factory = sqlite3.Row
-        connection.execute("PRAGMA foreign_keys = ON")
-        connection.execute("PRAGMA busy_timeout = 30000")
-        connection.execute("PRAGMA journal_mode = WAL")
-        return connection
+        try:
+            connection.row_factory = sqlite3.Row
+            connection.execute("PRAGMA foreign_keys = ON")
+            connection.execute("PRAGMA busy_timeout = 30000")
+            connection.execute("PRAGMA journal_mode = WAL")
+            return connection
+        except BaseException:
+            connection.close()
+            raise
 
     def initialize(self) -> None:
         # sqlite3.Connection's context manager commits or rolls back, but does
@@ -174,7 +180,7 @@ class FactoryStore:
         # open handle prevents a temporary database from being removed.
         with closing(self._connect()) as connection:
             version = int(connection.execute("PRAGMA user_version").fetchone()[0])
-            if version not in {0, 1}:
+            if version not in {0, 1, 2, 3}:
                 raise StoreError(f"unsupported database schema version: {version}")
             tables = {
                 row["name"]
@@ -186,8 +192,12 @@ class FactoryStore:
                 raise StoreError(
                     "unversioned non-empty database requires an explicit migration"
                 )
-            connection.executescript(SCHEMA)
-            connection.execute("PRAGMA user_version = 1")
+            # Additive schema migration; old rows/specs/events are untouched.
+            try:
+                connection.executescript("BEGIN IMMEDIATE;\n" + SCHEMA + APPROVAL_SCHEMA + QUOTA_SCHEMA + "\nPRAGMA user_version = 3;\nCOMMIT;")
+            except BaseException:
+                connection.rollback()
+                raise
             event_columns = {
                 row["name"] for row in connection.execute("PRAGMA table_info(events)")
             }
@@ -198,7 +208,7 @@ class FactoryStore:
                 "event_count",
                 "event_head_hash",
             } <= run_columns:
-                raise StoreError("database schema does not match version 1")
+                raise StoreError("database schema does not match version 2")
 
     @staticmethod
     def _event(
@@ -268,10 +278,16 @@ class FactoryStore:
             (event_hash, run_id),
         )
 
-    def create_run(self, spec: FactorySpec, idempotency_key: str | None = None) -> str:
+    def create_run(self, spec: FactorySpec, idempotency_key: str | None = None,
+                   *, template_origin: dict[str, Any] | None = None) -> str:
         spec_json = spec.canonical_json()
         spec_hash = sha256(spec_json.encode("utf-8")).hexdigest()
-        key = idempotency_key or f"spec:{spec_hash}"
+        origin = None
+        if template_origin is not None:
+            from .templates import validate_origin
+            origin = validate_origin(spec, template_origin)
+        origin_hash = sha256(_canonical(origin).encode("utf-8")).hexdigest() if origin is not None else None
+        key = idempotency_key or (f"template:{origin_hash}" if origin_hash else f"spec:{spec_hash}")
         if not key or len(key) > 256:
             raise ValueError("idempotency key must contain 1..256 characters")
         run_id = sha256(f"{key}\0{spec_hash}".encode("utf-8")).hexdigest()[:24]
@@ -287,6 +303,10 @@ class FactoryStore:
                     raise IdempotencyConflict(
                         "idempotency key is already bound to a different specification"
                     )
+                events = self._replay_with_connection(connection, str(existing["run_id"]))
+                previous_origins = [event["payload"] for event in events if event["event_type"] == "run.template_compiled"]
+                if previous_origins != ([origin] if origin is not None else []):
+                    raise IdempotencyConflict("idempotency key is already bound to different template provenance")
                 connection.commit()
                 return str(existing["run_id"])
             connection.execute(
@@ -323,6 +343,8 @@ class FactoryStore:
                         task.max_attempts or spec.budget.default_max_attempts,
                     ),
                 )
+            if any(task.approval == "required" for task in spec.tasks) or spec.budget.execution_quota is not None:
+                connection.execute("INSERT INTO approval_runtime(run_id,observed_at) VALUES(?,?)", (run_id, _time(now)))
             for task in spec.tasks:
                 for dependency in task.depends_on:
                     connection.execute(
@@ -334,10 +356,14 @@ class FactoryStore:
                 run_id=run_id,
                 task_id=None,
                 event_type="run.created",
-                payload={"spec_hash": spec_hash, "task_count": len(spec.tasks)},
+                payload={"spec_hash": spec_hash, "task_count": len(spec.tasks),
+                         **({"template_origin_sha256": origin_hash} if origin_hash else {})},
                 created_at=now,
                 event_key="run.created",
             )
+            if origin is not None:
+                self._event(connection, run_id=run_id, task_id=None, event_type="run.template_compiled",
+                            payload=origin, created_at=now, event_key="run.template_compiled")
             connection.commit()
             return run_id
         except Exception:
@@ -347,13 +373,24 @@ class FactoryStore:
             connection.close()
 
     def load_spec(self, run_id: str) -> FactorySpec:
+        return self.load_execution_plan(run_id)[0]
+
+    def load_execution_plan(self, run_id: str) -> tuple[FactorySpec, bool]:
+        """Load the spec and validated template marker from one journal snapshot."""
         with closing(self._connect()) as connection:
+            connection.execute("BEGIN")
             row = connection.execute(
                 "SELECT spec_json FROM runs WHERE run_id=?", (run_id,)
             ).fetchone()
+            templated = row is not None and connection.execute(
+                "SELECT 1 FROM events WHERE run_id=? AND (event_type LIKE 'run.template%' OR "
+                "(event_type='run.created' AND payload_json LIKE '%template_origin_sha256%')) LIMIT 1", (run_id,)
+            ).fetchone() is not None
+            if templated:
+                self._replay_with_connection(connection, run_id)
         if row is None:
             raise UnknownRun(run_id)
-        return FactorySpec.from_json(row["spec_json"])
+        return FactorySpec.from_json(row["spec_json"]), templated
 
     def start_run(self, run_id: str) -> None:
         connection = self._connect()
@@ -508,9 +545,10 @@ class FactoryStore:
             (run_id, TaskState.RUNNING, now),
         ).fetchall()
         for row in expired:
+            uncertain = self._quota_abandon(connection, run_id, row["task_id"], row["attempts"], now)
             target = (
                 TaskState.FAILED
-                if row["attempts"] >= row["max_attempts"]
+                if uncertain or row["attempts"] >= row["max_attempts"]
                 else TaskState.RETRY_WAIT
             )
             next_at = now if target == TaskState.RETRY_WAIT else None
@@ -529,7 +567,7 @@ class FactoryStore:
                 ),
                 extra_values=(
                     next_at,
-                    "lease expired",
+                    "quota consumption unknown after interruption" if uncertain else "lease expired",
                     now if target == TaskState.FAILED else None,
                 ),
             )
@@ -553,11 +591,7 @@ class FactoryStore:
             if run["state"] != RunState.RUNNING or run["kill_switch"]:
                 connection.commit()
                 return None
-            if run["started_at"] is not None and now - run["started_at"] >= run["max_wall_seconds"]:
-                connection.commit()
-                self.activate_kill_switch(run_id, reason="wall-clock budget exhausted")
-                return None
-
+            self._approval_clock(connection, run_id, now, update=True)
             self._recover_expired(connection, run_id, now)
             self._refresh_tasks(connection, run_id, now)
             attempts = connection.execute(
@@ -568,19 +602,39 @@ class FactoryStore:
                 connection.commit()
                 self.activate_kill_switch(run_id, reason="attempt budget exhausted")
                 return None
-            row = connection.execute(
-                """
-                SELECT task_id, state, attempts FROM tasks
-                WHERE run_id=? AND state=?
-                ORDER BY sort_order, task_id LIMIT 1
-                """,
+            ready = connection.execute(
+                "SELECT task_id,state,attempts FROM tasks WHERE run_id=? AND state=? ORDER BY sort_order,task_id",
                 (run_id, TaskState.READY),
-            ).fetchone()
+            ).fetchall()
+            protected = connection.execute("SELECT 1 FROM approval_runtime WHERE run_id=?", (run_id,)).fetchone() is not None
+            spec = self._approval_spec(connection, run_id)[1] if protected else None
+            row = None
+            grant = None
+            for item in ready:
+                if self._quota_check(connection, run_id, item["task_id"], item["attempts"] + 1) is not None:
+                    continue
+                if spec is not None and spec.task(item["task_id"]).approval == "required":
+                    approval_status, candidate_grant = self._approval_check(connection, run_id, item["task_id"], item["attempts"] + 1, now)
+                    if approval_status != "approved":
+                        continue
+                    grant = candidate_grant
+                row = item
+                break
+            running = connection.execute("SELECT 1 FROM tasks WHERE run_id=? AND state='running' LIMIT 1", (run_id,)).fetchone()
+            waiting_only = bool(ready) and row is None and running is None
+            self._approval_pause(connection, run_id, now, waiting_only)
+            if not waiting_only and run["started_at"] is not None and self._approval_elapsed(connection, run, now) >= run["max_wall_seconds"]:
+                connection.commit()
+                self.activate_kill_switch(run_id, reason="wall-clock budget exhausted")
+                return None
             if row is None:
                 connection.commit()
                 return None
             attempt = int(row["attempts"]) + 1
+            self._quota_reserve(connection, run_id, row["task_id"], attempt, now)
             expires_at = now + lease_seconds
+            if grant is not None:
+                expires_at = min(expires_at, grant["expires_at"])
             self._transition_task(
                 connection,
                 run_id,
@@ -612,6 +666,12 @@ class FactoryStore:
             connection.execute("BEGIN IMMEDIATE")
             now = self.clock()
             expires_at = now + lease_seconds
+            try:
+                grant = self._approval_gate(connection, claim.run_id, claim.task_id, claim.attempt, now)
+            except ApprovalError as exc:
+                raise LeaseLost(str(exc)) from exc
+            if grant is not None:
+                expires_at = min(expires_at, grant["expires_at"])
             cursor = connection.execute(
                 """
                 UPDATE tasks SET lease_expires_at=?
@@ -679,6 +739,13 @@ class FactoryStore:
             if existing:
                 if existing["receipt_hash"] != receipt_hash:
                     raise IdempotencyConflict("attempt receipt already exists with another hash")
+                if self._quota_spec(connection, claim.run_id).budget.execution_quota is not None:
+                    reservations, dispatches = self._quota_records(connection, claim.run_id)
+                    from .quotas import _receipt
+
+                    key = (claim.task_id, claim.attempt)
+                    if _canonical(receipt.get("execution_quota")) != _canonical(_receipt(reservations[key], dispatches.get(key, []))):
+                        raise StoreError("idempotent receipt differs from quota ledger")
                 connection.commit()
                 if row is None:
                     raise StoreError(f"task {claim.task_id!r} disappeared")
@@ -692,6 +759,12 @@ class FactoryStore:
                 raise LeaseLost(f"lease lost for {claim.task_id!r}")
             if row["lease_expires_at"] <= now:
                 raise LeaseLost(f"lease expired for {claim.task_id!r}")
+            try:
+                approval = self._approval_gate(connection, claim.run_id, claim.task_id, claim.attempt, now)
+            except ApprovalError as exc:
+                raise LeaseLost(str(exc)) from exc
+            if self._quota_complete(connection, claim, receipt, succeeded, now):
+                retryable = False
             if len(receipt_json.encode("utf-8")) > 10_000_000:
                 raise ValueError("receipt exceeds the 10 MB persistence limit")
             # Keep lease validation, optional publication, and completion under
@@ -702,6 +775,15 @@ class FactoryStore:
                 if candidate is not None and not isinstance(candidate, CompletionEffect):
                     raise TypeError("completion callback returned an invalid effect")
                 effect = candidate
+                # A long publication must still be authorized when it ends;
+                # expired approval rolls back both bytes and SQLite changes.
+                try:
+                    checked_at = self.clock()
+                    self._approval_gate(connection, claim.run_id, claim.task_id, claim.attempt, checked_at)
+                    if approval is not None:
+                        now = checked_at
+                except ApprovalError as exc:
+                    raise LeaseLost(str(exc)) from exc
             connection.execute(
                 """
                 INSERT INTO receipts(
@@ -818,6 +900,7 @@ class FactoryStore:
                 ),
             ).fetchall()
             for row in rows:
+                self._quota_abandon(connection, run_id, row["task_id"], row["attempts"], now)
                 self._transition_task(
                     connection,
                     run_id,
@@ -959,10 +1042,15 @@ class FactoryStore:
             "event_count": run["event_count"],
             "event_head_hash": run["event_head_hash"],
             "tasks": task_items,
+            **self._approval_snapshot(connection, run, task_items, self.clock()),
+            **self._quota_snapshot(connection, run, task_items, self.clock()),
         }
 
     def snapshot(self, run_id: str) -> dict[str, Any]:
         with closing(self._connect()) as connection:
+            # State, approval clock/wait metadata and journal anchors share one
+            # read snapshot even while another worker commits a transition.
+            connection.execute("BEGIN")
             return self._snapshot_with_connection(connection, run_id)
 
     def _replay_with_connection(
@@ -1023,6 +1111,14 @@ class FactoryStore:
             previous_hash = calculated
         if len(events) != anchor["event_count"] or previous_hash != anchor["event_head_hash"]:
             raise StoreError("event chain does not match the run anchor")
+        if any(event["event_type"].startswith("run.template") or
+               (event["event_type"] == "run.created" and "template_origin_sha256" in event["payload"])
+               for event in events):
+            from .templates import verify_template_events
+            row = connection.execute("SELECT spec_json FROM runs WHERE run_id=?", (run_id,)).fetchone()
+            issues = verify_template_events(FactorySpec.from_json(row["spec_json"]), events)
+            if issues:
+                raise StoreError("; ".join(issues))
         return events
 
     def replay(self, run_id: str) -> list[dict[str, Any]]:

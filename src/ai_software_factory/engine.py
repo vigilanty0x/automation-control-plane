@@ -14,6 +14,8 @@ import threading
 import time
 from typing import Callable
 
+from .evidence import canonical_json
+from .quotas import QuotaError
 from .evidence import (
     artifact_manifest,
     build_receipt,
@@ -41,6 +43,8 @@ class RunResult:
     tasks_failed: int
     tasks_blocked: int
     tasks_cancelled: int
+    waiting_for_approval: bool = False
+    waiting_for_quota: bool = False
 
 
 class PublishError(RuntimeError):
@@ -456,12 +460,48 @@ class FactoryEngine:
         # each request still uses the narrower validated spec workspace.
         self.executor = executor or SubprocessExecutor(self.base_directory)
 
+    def _execute_quota(self, spec, claim, request, ordinal):
+        if spec.budget.execution_quota is None:
+            return self.executor.execute(request)
+        if getattr(self.executor, "quota_measurement", None) != "factory-executor-output-v1":
+            raise QuotaError("executor output measurement capability unavailable")
+        self.store.begin_dispatch(claim, request, ordinal)
+        started = time.monotonic_ns()
+        # Exception or process loss deliberately leaves STARTED without a zero
+        # result. Completion/recovery turns it into UNKNOWN and keeps capacity.
+        try:
+            result = self.executor.execute(request)
+            elapsed = time.monotonic_ns() - started
+            if elapsed < 0 or type(result.stdout) is not bytes or type(result.stderr) is not bytes:
+                raise QuotaError("native output/time measurement invalid")
+        except Exception:
+            self.store.fail_dispatch(claim)
+            raise
+        measurement = {"executor_calls": 1,
+                       "retained_output_bytes": len(result.stdout) + len(result.stderr),
+                       "execution_ms": (elapsed + 999_999) // 1_000_000}
+        try:
+            within = self.store.settle_dispatch(claim, ordinal, measurement, origin="engine_monotonic_output")
+        except Exception:
+            self.store.fail_dispatch(claim)
+            raise
+        if not within:
+            raise QuotaError("observed execution exceeded reserved quota")
+        return result
+
     def plan(self, spec: FactorySpec, *, idempotency_key: str | None = None) -> str:
         resolve_workspace(spec, self.base_directory).mkdir(parents=True, exist_ok=True)
         return self.store.create_run(spec, idempotency_key)
 
+    def plan_template(self, catalog, template_id: str, bindings,
+                      *, idempotency_key: str | None = None) -> str:
+        from .templates import compile_template
+        compiled = compile_template(catalog, template_id, bindings)
+        resolve_workspace(compiled.spec, self.base_directory).mkdir(parents=True, exist_ok=True)
+        return self.store.create_run(compiled.spec, idempotency_key, template_origin=compiled.origin)
+
     def execute_one(self, run_id: str, worker_id: str) -> bool:
-        spec = self.store.load_spec(run_id)
+        spec, templated = self.store.load_execution_plan(run_id)
         canonical_workspace = resolve_workspace(spec, self.base_directory)
         claim = self.store.claim_ready_task(
             run_id, worker_id, spec.budget.lease_seconds
@@ -490,6 +530,9 @@ class FactoryEngine:
                 )
 
                 def remaining_wall() -> float:
+                    if "active_wall_seconds" in status:
+                        current = self.store.snapshot(run_id)
+                        return spec.budget.max_wall_seconds - current["active_wall_seconds"]
                     return _remaining_wall_seconds(
                         spec, run_started_at, self.clock
                     )
@@ -502,6 +545,15 @@ class FactoryEngine:
                     )
                     return True
 
+                def remaining_execution() -> float:
+                    remaining = remaining_wall()
+                    if task.approval == "required":
+                        approval_remaining = self.store.approval_seconds_remaining(claim)
+                        if approval_remaining is None:
+                            raise ValueError("approval duration was not measured")
+                        remaining = min(remaining, approval_remaining)
+                    return remaining
+
                 if cancel_if_wall_exhausted():
                     return False
                 task_timeout = (
@@ -509,11 +561,16 @@ class FactoryEngine:
                     or spec.budget.default_task_timeout_seconds
                 )
                 try:
+                    proposed = self.provider.task_request(spec, task, workspace)
+                    if (templated or task.approval == "required" or spec.budget.execution_quota is not None) and proposed != SpecProvider().task_request(spec, task, workspace):
+                        if spec.budget.execution_quota is not None:
+                            raise QuotaError("quota task cannot use a dynamic Provider request")
+                        raise ValueError("template task cannot use a dynamic Provider request" if templated else "approved task cannot use a dynamic Provider request")
                     request = _confine_request(
-                        self.provider.task_request(spec, task, workspace),
+                        proposed,
                         workspace=workspace,
                         timeout_cap=task_timeout,
-                        remaining_wall=remaining_wall(),
+                        remaining_wall=remaining_execution(),
                         output_cap=spec.budget.max_output_bytes,
                     )
                 except Exception as exc:
@@ -530,7 +587,7 @@ class FactoryEngine:
                         ),
                         workspace=workspace,
                         timeout_cap=task_timeout,
-                        remaining_wall=remaining_wall(),
+                        remaining_wall=remaining_execution(),
                         output_cap=spec.budget.max_output_bytes,
                     )
                     provider_error: Exception | None = exc
@@ -538,10 +595,11 @@ class FactoryEngine:
                     provider_error = None
                 started_at = self.clock()
                 tests: list[tuple[str, ExecutionRequest, ExecutionResult]] = []
+                quota_rejected = False
                 try:
                     if provider_error is not None:
                         raise provider_error
-                    result = self.executor.execute(request)
+                    result = self._execute_quota(spec, claim, request, 0)
                     if result.succeeded:
                         for test in task.tests:
                             if cancel_if_wall_exhausted():
@@ -551,20 +609,24 @@ class FactoryEngine:
                                 or task.timeout_seconds
                                 or spec.budget.default_task_timeout_seconds
                             )
+                            proposed_test = self.provider.test_request(spec, task, test, workspace)
+                            if (templated or task.approval == "required" or spec.budget.execution_quota is not None) and proposed_test != SpecProvider().test_request(spec, task, test, workspace):
+                                if spec.budget.execution_quota is not None:
+                                    raise QuotaError("quota task cannot use a dynamic Provider test")
+                                raise ValueError("template task cannot use a dynamic Provider test" if templated else "approved task cannot use a dynamic Provider test")
                             test_request = _confine_request(
-                                self.provider.test_request(
-                                    spec, task, test, workspace
-                                ),
+                                proposed_test,
                                 workspace=workspace,
                                 timeout_cap=test_timeout,
-                                remaining_wall=remaining_wall(),
+                                remaining_wall=remaining_execution(),
                                 output_cap=spec.budget.max_output_bytes,
                             )
-                            test_result = self.executor.execute(test_request)
+                            test_result = self._execute_quota(spec, claim, test_request, len(tests) + 1)
                             tests.append((test.name, test_request, test_result))
                             if not test_result.succeeded:
                                 break
                 except Exception as exc:
+                    quota_rejected = isinstance(exc, QuotaError)
                     result = _failure_result(
                         exc,
                         executor_name=getattr(
@@ -637,6 +699,9 @@ class FactoryEngine:
                     expected_tests=tuple(test.name for test in task.tests),
                     ownership=ownership,
                 )
+                if spec.budget.execution_quota is not None:
+                    receipt["execution_quota"] = self.store.quota_usage(claim)
+                    receipt_hash = sha256(canonical_json(receipt).encode()).hexdigest()
                 succeeded = receipt["outcome"] == "succeeded"
                 if not result.succeeded:
                     error = (
@@ -690,7 +755,7 @@ class FactoryEngine:
                         receipt=receipt,
                         receipt_hash=receipt_hash,
                         error=error,
-                        retryable=not bool(ownership["violations"]),
+                        retryable=not bool(ownership["violations"]) and not quota_rejected,
                         retry_base_seconds=spec.budget.retry_base_seconds,
                         retry_cap_seconds=spec.budget.retry_cap_seconds,
                         before_transition=publish if can_publish else None,
@@ -728,6 +793,9 @@ class FactoryEngine:
                         expected_tests=tuple(test.name for test in task.tests),
                         ownership=ownership,
                     )
+                    if spec.budget.execution_quota is not None:
+                        receipt["execution_quota"] = self.store.quota_usage(claim)
+                        receipt_hash = sha256(canonical_json(receipt).encode()).hexdigest()
                     try:
                         claim = self.store.renew_lease(
                             claim, spec.budget.lease_seconds
@@ -762,6 +830,8 @@ class FactoryEngine:
             if state in {RunState.SUCCEEDED, RunState.FAILED, RunState.CANCELLED}:
                 break
             if not worked:
+                if self.store.snapshot(run_id).get("execution_status") in {"waiting_approval", "waiting_quota"}:
+                    break
                 retry_at = self.store.next_retry_at(run_id)
                 if retry_at is None:
                     # This can happen while another worker owns all executable
@@ -778,4 +848,6 @@ class FactoryEngine:
             tasks_failed=counts.get(TaskState.FAILED, 0),
             tasks_blocked=counts.get(TaskState.BLOCKED, 0),
             tasks_cancelled=counts.get(TaskState.CANCELLED, 0),
+            waiting_for_approval=snapshot.get("execution_status") == "waiting_approval",
+            waiting_for_quota=snapshot.get("execution_status") == "waiting_quota",
         )

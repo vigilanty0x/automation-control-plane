@@ -215,6 +215,7 @@ class TaskSpec:
     environment: tuple[tuple[str, str], ...]
     timeout_seconds: float | None
     max_attempts: int | None
+    approval: str | None = None
 
     @classmethod
     def parse(cls, raw: object, index: int, issues: list[str]) -> "TaskSpec":
@@ -232,6 +233,7 @@ class TaskSpec:
             "environment",
             "timeout_seconds",
             "max_attempts",
+            "approval",
         }
         _unknown_fields(value, allowed, location, issues)
         _required_fields(value, {"id", "owner", "command"}, location, issues)
@@ -354,6 +356,9 @@ class TaskSpec:
                 minimum=1,
                 maximum=100,
             )
+        approval = value.get("approval")
+        if "approval" in value and (not isinstance(approval, str) or approval != "required"):
+            issues.append(f"{location}.approval must be required when present")
         return cls(
             id=task_id,
             owner=owner,
@@ -366,6 +371,7 @@ class TaskSpec:
             environment=tuple(environment),
             timeout_seconds=timeout,
             max_attempts=max_attempts,
+            approval=approval,
         )
 
 
@@ -380,6 +386,7 @@ class BudgetSpec:
     retry_base_seconds: float = 1.0
     retry_cap_seconds: float = 60.0
     default_max_attempts: int = 3
+    execution_quota: dict[str, Any] | None = None
 
     @classmethod
     def parse(cls, raw: object, issues: list[str]) -> "BudgetSpec":
@@ -395,10 +402,19 @@ class BudgetSpec:
             "retry_base_seconds",
             "retry_cap_seconds",
             "default_max_attempts",
+            "execution_quota",
         }
         _unknown_fields(value, allowed, location, issues)
         defaults = cls()
+        quota = None
+        if "execution_quota" in value:
+            from .quotas import parse_quota, QuotaError
+            try:
+                quota = parse_quota(value["execution_quota"])
+            except QuotaError as exc:
+                issues.append(str(exc))
         return cls(
+            execution_quota=quota,
             max_tasks=_integer(
                 value.get("max_tasks", defaults.max_tasks),
                 f"{location}.max_tasks",
@@ -521,7 +537,17 @@ class FactorySpec:
             issues.extend(validate_graph(tuple(tasks)))
         if issues:
             raise SpecError(issues)
-        return cls(version, name, workspace, budget, tuple(tasks))
+        parsed = cls(version, name, workspace, budget, tuple(tasks))
+        if budget.execution_quota is not None:
+            from .quotas import reservation_contract, QuotaError
+            if set(budget.execution_quota["owners"]) - {task.owner for task in tasks}:
+                raise SpecError("quota names an owner group absent from the specification")
+            try:
+                for task in tasks:
+                    reservation_contract(parsed, "validation", task.id, 1)
+            except QuotaError as exc:
+                raise SpecError(str(exc)) from exc
+        return parsed
 
     @classmethod
     def from_json(cls, source: str | bytes | bytearray) -> "FactorySpec":
@@ -554,6 +580,9 @@ class FactorySpec:
             "retry_cap_seconds": self.budget.retry_cap_seconds,
             "default_max_attempts": self.budget.default_max_attempts,
         }
+        if self.budget.execution_quota is not None:
+            # Copy the validated value; callers cannot mutate the spec via export.
+            budget["execution_quota"] = json.loads(json.dumps(self.budget.execution_quota))
         tasks: list[dict[str, Any]] = []
         for task in self.tasks:
             item: dict[str, Any] = {
@@ -567,6 +596,8 @@ class FactorySpec:
                 "tests": [],
                 "environment": dict(task.environment),
             }
+            if task.approval is not None:
+                item["approval"] = task.approval
             if task.timeout_seconds is not None:
                 item["timeout_seconds"] = task.timeout_seconds
             if task.max_attempts is not None:

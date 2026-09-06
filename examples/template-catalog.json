@@ -1,0 +1,79 @@
+{
+  "format": "ai-software-factory/template-catalog-v1",
+  "templates": {
+    "text-component-v1": {
+      "schema_version": 1,
+      "name": "Reusable text component",
+      "workspace": ".factory/template-workspace",
+      "budget": {
+        "max_tasks": 10,
+        "max_attempts": 4,
+        "max_wall_seconds": 30,
+        "max_output_bytes": 65536,
+        "default_task_timeout_seconds": 5,
+        "default_max_attempts": 1
+      },
+      "tasks": [
+        {
+          "id": "build",
+          "owner": "builder",
+          "description": "Build a parameterized text component",
+          "command": [
+            "python",
+            "-I",
+            "-S",
+            "-B",
+            "-c",
+            "import os;from pathlib import Path;p=Path('src/message.py');p.parent.mkdir(parents=True,exist_ok=True);p.write_text('PREFIX = '+repr(os.environ['FACTORY_INPUT_PREFIX'])+'\\ndef render(text):\\n    return PREFIX + text\\n',encoding='utf-8')"
+          ],
+          "environment": {
+            "FACTORY_INPUT_PREFIX": "{{PREFIX}}"
+          },
+          "owned_paths": [
+            "src/message.py"
+          ],
+          "artifacts": [
+            "src/message.py"
+          ],
+          "tests": [
+            {
+              "name": "syntax",
+              "command": [
+                "python",
+                "-I",
+                "-S",
+                "-B",
+                "-c",
+                "from pathlib import Path;compile(Path('src/message.py').read_text(encoding='utf-8'),'message.py','exec')"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "verify",
+          "owner": "verifier",
+          "depends_on": [
+            "build"
+          ],
+          "command": [
+            "python",
+            "-I",
+            "-S",
+            "-B",
+            "-c",
+            "import os,runpy,json;from pathlib import Path;n=runpy.run_path('src/message.py');actual=n['render']('value');assert actual==os.environ['FACTORY_INPUT_PREFIX']+'value';p=Path('reports/contract.json');p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps({'actual':actual,'matched':True},ensure_ascii=False),encoding='utf-8')"
+          ],
+          "environment": {
+            "FACTORY_INPUT_PREFIX": "{{PREFIX}}"
+          },
+          "owned_paths": [
+            "reports/contract.json"
+          ],
+          "artifacts": [
+            "reports/contract.json"
+          ]
+        }
+      ]
+    }
+  }
+}

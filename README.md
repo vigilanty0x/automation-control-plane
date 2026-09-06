@@ -1,5 +1,10 @@
 # AI Software Factory
 
+Optional [native execution quotas](docs/execution-quota-contract.md) reserve
+command/test capacity in the existing durable Store. Calls, raw retained output
+and elapsed execution are accounted separately; unknown results retain their
+reservation. This does not measure provider tokens or cost.
+
 AI Software Factory is a dependency-free Python 3.11+ runtime for turning a
 strict JSON build plan into a durable, replayable local execution. It is built
 for agents and humans that need more than a prompt loop: explicit ownership,
@@ -41,6 +46,9 @@ and [the release contract](docs/release.md).
   receipt identities and completion events are verified offline.
 - Idempotent planning and completion, deterministic replay, and JSON-only CLI
   output suitable for automation.
+- Optional attempt-bound local approvals, expiry checks at claim/publication,
+  and durable approval waiting. Declared actors are not authenticated identities.
+  See the [approval contract](docs/approval-contract.md).
 
 ## Five-minute tour
 
@@ -129,7 +137,9 @@ See [the specification](docs/specification.md) and the complete
 | `init [DIR]` | Create a non-destructive synthetic starter specification. |
 | `validate SPEC` | Parse strictly and print the digest plus topological order. |
 | `plan SPEC` | Persist an idempotent run without executing it. |
-| `run SPEC` | Plan/resume and execute until a terminal state. |
+| `run SPEC` | Plan/resume until a terminal state or explicit approval wait. |
+| `approval-request` | Inspect the exact ready task/attempt contract to review. |
+| `approval-decide` | Journal a matching, expiring local decision. |
 | `status` | Return the durable run/task snapshot. |
 | `replay` | Verify and return the ordered event chain. |
 | `export` | Export spec, status, events, receipts, and a root digest. |
@@ -137,7 +147,8 @@ See [the specification](docs/specification.md) and the complete
 | `kill` | Activate the durable run kill switch with a reason. |
 
 Successful commands return `0`. Invalid input, a failed/cancelled run, or
-verification failure returns `2`. Machine-readable results go to stdout;
+verification failure returns `2`. Approval waiting returns `3` and is not success.
+Machine-readable results go to stdout;
 machine-readable errors go to stderr.
 
 Planning is idempotent. Reusing the same idempotency key with the same spec
@@ -157,6 +168,25 @@ Exports verify stored receipts and carry their own digest. This detects
 accidental corruption and ordinary tampering; it is not a digital signature.
 Use an external signing or transparency system if hostile database administrators
 are in scope.
+
+## Reusable workflow templates
+
+An explicit catalog can parameterize a trusted native recipe, then use the same
+Engine, Store, approvals, quotas and evidence pipeline:
+
+```bash
+ai-software-factory template-compile examples/template-catalog.json --template text-component-v1 --bindings examples/template-bindings.json
+ai-software-factory template-run examples/template-catalog.json --template text-component-v1 --bindings examples/template-bindings.json
+```
+
+The example generates and tests a Python component with the supplied prefix.
+Use `template-plan` to inspect a durable run before execution. The catalog is
+operator-authored code; parameters can affect only names/descriptions and
+`FACTORY_INPUT_*` values. Commands, paths, task ownership and policy stay fixed.
+The journal retains normalized template/bindings and verifies their relationship
+to the effective spec. It does not authenticate the author. Read the
+[template contract](docs/template-contract.md), including the remaining
+worktree and independent-workspace limits.
 
 ## Trust boundary
 

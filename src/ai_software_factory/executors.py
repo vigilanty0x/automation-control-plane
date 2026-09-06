@@ -159,6 +159,8 @@ class SubprocessExecutor:
 
     name = "subprocess-v1"
 
+    quota_measurement = "factory-executor-output-v1"
+
     def __init__(self, workspace_root: str | Path):
         self.workspace_root = Path(workspace_root).resolve()
 
@@ -270,6 +272,7 @@ class SubprocessExecutor:
 class DeterministicMockExecutor:
     """Deterministic executor for examples and orchestration tests."""
 
+    quota_measurement = "factory-executor-output-v1"
     name = "deterministic-mock-v1"
 
     def __init__(

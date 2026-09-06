@@ -13,3 +13,66 @@ recursive-include docs *.md
 recursive-include examples *.json
 recursive-include scripts *.py
 recursive-include tests *.py
+include tests/approval-legacy-golden.json
+include tests/approval-v1-schema.sql
+include tests/quota-legacy-export.json
+
+# Explicit public source selection; preserves parity fixtures and historical packages.
+include .gitignore
+include .portfolio-rehearsal.json
+include docs/approval-contract.md
+include docs/architecture.md
+include docs/execution-quota-contract.md
+include docs/release.md
+include docs/security-model.md
+include docs/specification.md
+include docs/template-contract.md
+include examples/factory.json
+include examples/template-bindings.json
+include examples/template-catalog.json
+include packages/ai-software-factory-starter-kit/.github/workflows/ci.yml
+include packages/ai-software-factory-starter-kit/.gitignore
+include packages/ai-software-factory-starter-kit/AI_ASSISTANCE.md
+include packages/ai-software-factory-starter-kit/LICENSE
+include packages/ai-software-factory-starter-kit/README.md
+include packages/ai-software-factory-starter-kit/SECURITY.md
+include packages/ai-software-factory-starter-kit/examples/valid.json
+include packages/ai-software-factory-starter-kit/pyproject.toml
+include packages/ai-software-factory-starter-kit/scripts/check.py
+include packages/ai-software-factory-starter-kit/src/ai_software_factory_starter_kit/__init__.py
+include packages/ai-software-factory-starter-kit/src/ai_software_factory_starter_kit/cli.py
+include packages/ai-software-factory-starter-kit/src/ai_software_factory_starter_kit/core.py
+include packages/ai-software-factory-starter-kit/tests/test_core.py
+include scripts/build_release_evidence.py
+include scripts/check.py
+include scripts/check_release_policy.py
+include scripts/verify_counterproof.py
+include scripts/verify_sdist.py
+include src/ai_software_factory/__init__.py
+include src/ai_software_factory/__main__.py
+include src/ai_software_factory/approvals.py
+include src/ai_software_factory/cli.py
+include src/ai_software_factory/core.py
+include src/ai_software_factory/engine.py
+include src/ai_software_factory/evidence.py
+include src/ai_software_factory/executors.py
+include src/ai_software_factory/graph.py
+include src/ai_software_factory/models.py
+include src/ai_software_factory/quotas.py
+include src/ai_software_factory/state.py
+include src/ai_software_factory/store.py
+include src/ai_software_factory/template_inputs.py
+include src/ai_software_factory/templates.py
+include tests/__init__.py
+include tests/support.py
+include tests/test_approval_authority.py
+include tests/test_cli.py
+include tests/test_core.py
+include tests/test_engine.py
+include tests/test_execution_quotas.py
+include tests/test_executors.py
+include tests/test_models.py
+include tests/test_state.py
+include tests/test_store.py
+include tests/test_template_inputs.py
+include tests/test_templates.py
