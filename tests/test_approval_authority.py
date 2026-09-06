@@ -7,7 +7,7 @@ import multiprocessing
 import os
 from pathlib import Path
 import sqlite3
-import sys
+
 import tempfile
 import unittest
 from unittest.mock import patch
