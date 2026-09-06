@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/learnpack.schema.json",
+  "title": "LearnPackManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["spec_version", "kind", "metadata", "compatibility", "intent", "workflow", "permissions", "risk", "verification", "provenance", "privacy", "supply_chain"],
+  "properties": {
+    "spec_version": {"const": "0.1.0"}, "kind": {"const": "LearnPack"},
+    "metadata": {"type": "object"}, "compatibility": {"type": "object"}, "intent": {"type": "object"},
+    "workflow": {"type": "object"}, "permissions": {"type": "object"}, "risk": {"type": "object"},
+    "verification": {"type": "object"}, "provenance": {"type": "object"}, "privacy": {"type": "object"}, "supply_chain": {"type": "object"}
+  }
+}

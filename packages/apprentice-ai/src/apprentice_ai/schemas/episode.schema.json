@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/episode.schema.json",
+  "title": "Episode",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["episode_id", "session_id", "start_event_id", "end_event_id", "actions", "context", "evidence_refs", "status", "segmentation"],
+  "properties": {
+    "episode_id": {"type": "string", "pattern": "^epi_"}, "session_id": {"type": "string", "pattern": "^ses_"},
+    "start_event_id": {"type": "string", "pattern": "^evt_"}, "end_event_id": {"type": "string", "pattern": "^evt_"},
+    "label_candidates": {"type": "array", "items": {"type": "object"}}, "goal_hypotheses": {"type": "array", "items": {"type": "object"}},
+    "effect": {"type": ["string", "null"]}, "actions": {"type": "array", "items": {"type": "string"}},
+    "context": {"type": "object"}, "privacy_class": {"type": "string", "enum": ["D1", "D2", "D3", "D4"]},
+    "evidence_refs": {"type": "array", "items": {"type": "string"}}, "status": {"enum": ["complete", "incomplete"]},
+    "segmentation": {"type": "object", "required": ["method", "abstained"], "properties": {"method": {"type": "string"}, "abstained": {"type": "boolean"}}, "additionalProperties": false}
+  }
+}

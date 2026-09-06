@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://apprentice.local/schemas/0.1.0/routine.schema.json",
+  "title": "RoutineCandidate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["routine_id", "intent", "effect", "status", "induction_ids", "holdout_ids", "branches", "holdout_evaluation", "scores", "evidence_refs"],
+  "properties": {
+    "routine_id": {"type": "string", "pattern": "^rou_"}, "intent": {"type": "string"}, "effect": {"type": "string"}, "title": {"type": "string"},
+    "status": {"enum": ["observed", "explained", "confirmed", "compilable", "rejected", "stale"]},
+    "induction_ids": {"type": "array", "minItems": 3, "uniqueItems": true, "items": {"type": "string"}},
+    "holdout_ids": {"type": "array", "uniqueItems": true, "items": {"type": "string"}},
+    "occurrence_ids": {"type": "array"}, "prototype_steps": {"type": "array"}, "common_steps": {"type": "array"},
+    "branches": {"type": "array", "items": {"type": "object"}}, "holdout_evaluation": {"type": "array", "items": {"type": "object"}},
+    "scores": {"type": "object"}, "evidence_refs": {"type": "array", "items": {"type": "string"}},
+    "excluded_episode_ids": {"type": "array"}, "derived_by": {"type": "object"}, "created_at": {"type": "string"},
+    "answer_outcome": {"type": "string"}, "confirmed_by": {"type": "string"}, "compiled_skill": {"type": "object"},
+    "invalidation_reason": {"type": "string"}, "invalidated_evidence_ref": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"enum": ["confirmed", "compilable"]}}, "required": ["status"]},
+      "then": {"properties": {"holdout_ids": {"minItems": 2}}}
+    }
+  ]
+}

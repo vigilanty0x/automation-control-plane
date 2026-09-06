@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=83.0.0,<84"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "apprentice-ai"
+version = "0.1.0"
+description = "Local-first digital apprentice that learns explainable routines from permitted synthetic activity."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "Apache-2.0"
+authors = [{name = "vigilanty0x"}]
+keywords = ["local-first", "workflow-learning", "privacy", "learnpack"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/vigilanty0x/apprentice-ai"
+Documentation = "https://github.com/vigilanty0x/apprentice-ai/tree/main/docs"
+Issues = "https://github.com/vigilanty0x/apprentice-ai/issues"
+Source = "https://github.com/vigilanty0x/apprentice-ai"
+
+[project.scripts]
+apprentice = "apprentice_ai.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+apprentice_ai = ["py.typed", "schemas/*.json", "web/*.html", "web/*.css", "web/*.js"]
