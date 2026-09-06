@@ -3,6 +3,32 @@
 All notable changes are documented here. The format follows Keep a Changelog
 and the project uses semantic versioning.
 
+## Unreleased
+
+- Added bounded explicit workflow catalogs and data-only parameter compilation
+  through the existing Engine/Store. Template inputs and effective spec digests
+  share the native journal and are recompiled on replay/export verification.
+  No new queue, Git worktree provisioner, release or identity authority.
+- Added template-compile/template-plan/template-run and a reusable generated
+  component example. Existing untemplated specifications and receipts retain
+  their canonical form.
+
+- Added optional durable native execution quotas in the same Store: atomic
+  reservation, per-dispatch measurements, conservative UNKNOWN recovery,
+  explicit waiting, and journal/receipt replay checks. Tokens/cost remain
+  unmeasured; no new provider or scheduler is introduced.
+- Added transactional database migration to schema 3, preserving prior records,
+  and a complete legacy-export byte fixture for the omitted quota option.
+- Added optional per-attempt approvals in the native Store, binding the reviewed
+  task contract, expiry and attempt; persisted approval waiting does not consume
+  active wall budget. No additional queue or identity authority is introduced.
+- Added CLI review/decision commands and offline export approval checks while
+  preserving canonical JSON for specifications without the new optional field.
+- Added a transactional, additive database v1-to-v2 migration and recovery tests.
+- Closed SQLite connections when a connection-initialization PRAGMA fails.
+- Documented declared actor identity, trusted local execution boundaries and the
+  refusal of dynamic Provider requests for protected tasks.
+
 ## 1.0.0 - 2026-08-16
 
 ### Added

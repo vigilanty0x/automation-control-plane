@@ -27,6 +27,7 @@ integers. Detached evidence exports accepted by the CLI are capped at 64 MiB.
 | `retry_base_seconds` | 1 | First retry delay; zero is allowed. |
 | `retry_cap_seconds` | 60 | Maximum retry delay; never below the base. |
 | `default_max_attempts` | 3 | Default per-task attempt bound. |
+| `execution_quota` | absent | Optional durable native call/output/time admission; see [execution quotas](execution-quota-contract.md). No token/cost measurement. |
 
 ## Task object
 
@@ -43,6 +44,7 @@ integers. Detached evidence exports accepted by the CLI are capped at 64 MiB.
 | `environment` | no | Non-secret string overrides with uppercase names. |
 | `timeout_seconds` | no | Task-specific timeout. |
 | `max_attempts` | no | Task-specific bound from 1 through 100. |
+| `approval` | no | Exactly `required` when present; see [attempt approvals](approval-contract.md). Omission preserves historical canonical JSON. |
 
 Paths use `/`, are relative, contain no `.` or `..` segments, and cannot be the
 workspace root. Two different tasks cannot own the same path or overlapping

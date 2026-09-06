@@ -264,6 +264,8 @@ def verify_export(exported: dict[str, Any]) -> tuple[bool, tuple[str, ...]]:
     else:
         if isinstance(status, dict) and status.get("spec_hash") != spec_hash:
             issues.append("specification digest mismatch")
+        from .templates import verify_template_events
+        issues.extend(verify_template_events(parsed, events))
 
     receipts = exported.get("receipts")
     if not isinstance(receipts, list):
@@ -298,6 +300,8 @@ def verify_export(exported: dict[str, Any]) -> tuple[bool, tuple[str, ...]]:
                 "started_at", "finished_at", "duration_seconds", "outcome",
                 "execution", "tests", "artifacts", "ownership",
             }
+            if spec_hash is not None and parsed.budget.execution_quota is not None:
+                expected_receipt_fields.add("execution_quota")
             if set(receipt) != expected_receipt_fields:
                 issues.append(f"receipt {index} has an invalid field set")
             try:
@@ -336,4 +340,11 @@ def verify_export(exported: dict[str, Any]) -> tuple[bool, tuple[str, ...]]:
                 issues.append(f"receipt {index} has no matching completion event")
         if len(completion_events) != len(receipts):
             issues.append("completion event count does not match receipts")
+        if spec_hash is not None:
+            from .approvals import verify_approval_evidence
+
+            issues.extend(verify_approval_evidence(parsed, run_id, events, receipts))
+            from .quotas import verify_quota_evidence
+
+            issues.extend(verify_quota_evidence(parsed, run_id, events, receipts, status))
     return not issues, tuple(issues)

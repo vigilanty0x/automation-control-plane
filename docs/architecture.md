@@ -25,7 +25,8 @@ The core invariants are:
 | `models.py` | Strict parsing, immutable models, canonical serialization. |
 | `graph.py` | Iterative cycle detection, deterministic Kahn ordering, ownership conflicts. |
 | `state.py` | Allowed task and run state transitions. |
-| `store.py` | Schema v1, transactions, claims, leases, retries, events, receipts, export. |
+| `store.py` | Schema v3, transactions, claims, leases, retries, events, receipts, export. |
+| `templates.py` | Data-only template compilation and reproducible journal provenance. |
 | `executors.py` | Provider/executor protocols, bounded subprocesses, deterministic mock. |
 | `evidence.py` | Output summaries, artifact hashes, workspace deltas, receipt/export verification. |
 | `engine.py` | Attempt isolation, orchestration, policy checks, publish, run closure. |
@@ -45,8 +46,15 @@ An active engine worker renews its short configured lease on a heartbeat. If the
 worker process dies, heartbeats stop and another worker can recover the attempt
 after `lease_seconds` rather than waiting for the run wall budget.
 
-The database uses `PRAGMA user_version = 1`. An unknown or unversioned non-empty
-database is rejected rather than guessed into a schema.
+The database uses `PRAGMA user_version = 3`, with additive migrations from v1/v2
+for approval/quota state. An unknown or unversioned non-empty database is
+rejected rather than guessed into a schema. Template provenance needs no new
+table: creation and the optional compilation event share one transaction.
+
+Template runs use the same task leases, attempts and publication path.
+Compilation retains fixed commands and policy; it does not provision a Git
+worktree or add a cross-Store workspace lock. See the template contract for
+the operator's workspace-isolation responsibility.
 
 ## Attempt isolation and publish
 
