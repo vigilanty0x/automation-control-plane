@@ -1,0 +1,11 @@
+{
+  "idempotency_key": "synthetic-mission-001",
+  "title": "Validate the synthetic fixture",
+  "payload": {"fixture": "demo", "expected": "deterministic"},
+  "priority": 80,
+  "owner_scope": "demo",
+  "required_capabilities": ["python"],
+  "required_permissions": ["write"],
+  "max_retries": 2
+}
+
