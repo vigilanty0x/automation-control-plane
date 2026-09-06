@@ -84,7 +84,9 @@ def _windows_open(path):
                   ('LastWriteTime',ctypes.c_longlong),('ChangeTime',ctypes.c_longlong),('FileAttributes',wintypes.DWORD)]
     # Local absolute path already validated. Extended syntax avoids any need to
     # change the machine's long-path policy; caller device/UNC syntax is refused.
-    handle=kernel.CreateFileW('\\\\?\\'+str(path),0x80000000,7,None,3,0x00200000|0x08000000,None)
+    # Share reads only. Existing writers are refused; new writes and deletes
+    # cannot race the bounded read even when file timestamps are unchanged.
+    handle=kernel.CreateFileW('\\\\?\\'+str(path),0x80000000,1,None,3,0x00200000|0x08000000,None)
     if handle==wintypes.HANDLE(-1).value:raise ctypes.WinError(ctypes.get_last_error())
     fd=None
     try:

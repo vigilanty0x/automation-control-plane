@@ -19,7 +19,7 @@ from tests.support import spec
 class TemplateInputTests(unittest.TestCase):
     def setUp(self):
         temporary=tempfile.TemporaryDirectory();self.addCleanup(temporary.cleanup)
-        self.root=Path(temporary.name);self.path=self.root/'input.json'
+        self.root=Path(temporary.name).resolve();self.path=self.root/'input.json'
         self.path.write_bytes(b'12345678')
 
     def test_regular_exact_bytes_and_read_budget(self):
@@ -48,9 +48,16 @@ class TemplateInputTests(unittest.TestCase):
             entered.set();self.assertTrue(finished.wait(5))
             raw=native(fd,n);consumed.append(len(raw));return raw
         try:
-            with patch.object(reader.os,'read',side_effect=read),self.assertRaises(ValueError):reader.read_input(self.path,maximum=16)
+            with patch.object(reader.os,'read',side_effect=read):
+                if os.name=='nt':self.assertEqual(reader.read_input(self.path,maximum=16),b'12345678')
+                else:
+                    with self.assertRaises(ValueError):reader.read_input(self.path,maximum=16)
         finally:entered.set();worker.join(5)
-        self.assertFalse(worker.is_alive());self.assertEqual(errors,[]);self.assertLessEqual(sum(consumed),17)
+        self.assertFalse(worker.is_alive());self.assertLessEqual(sum(consumed),17)
+        if os.name=='nt':
+            self.assertEqual(len(errors),1);self.assertIsInstance(errors[0],PermissionError)
+            self.assertEqual(self.path.read_bytes(),b'12345678')
+        else:self.assertEqual(errors,[])
 
     def test_same_size_write_with_restored_mtime_is_refused(self):
         original=self.path.stat();native=os.read;changed=False
@@ -59,7 +66,45 @@ class TemplateInputTests(unittest.TestCase):
             if not changed:
                 self.path.write_bytes(b'abcdefgh');os.utime(self.path,ns=(original.st_atime_ns,original.st_mtime_ns));changed=True
             return native(fd,n)
-        with patch.object(reader.os,'read',side_effect=read),self.assertRaises(ValueError):reader.read_input(self.path,maximum=16)
+        if os.name=='nt':
+            # The real kernel handle prevents the mutation before it can occur.
+            with patch.object(reader.os,'read',side_effect=read),self.assertRaises(PermissionError):reader.read_input(self.path,maximum=16)
+            self.assertEqual(self.path.read_bytes(),b'12345678')
+            self.assertFalse(changed)
+        else:
+            with patch.object(reader.os,'read',side_effect=read),self.assertRaises(ValueError):reader.read_input(self.path,maximum=16)
+
+    @unittest.skipUnless(os.name=='nt','Windows sharing contract')
+    def test_existing_writer_is_refused_before_content_read(self):
+        with self.path.open('r+b'):
+            with patch.object(reader.os,'read',side_effect=AssertionError('content read with active writer')):
+                with self.assertRaises(PermissionError):reader.read_input(self.path,maximum=16)
+        self.assertEqual(reader.read_input(self.path,maximum=16),b'12345678')
+
+    @unittest.skipUnless(os.name=='nt','Windows sharing contract')
+    def test_existing_writable_mapping_is_refused_before_content_read(self):
+        import mmap
+        with self.path.open('r+b') as writer:mapping=mmap.mmap(writer.fileno(),0,access=mmap.ACCESS_WRITE)
+        try:
+            with patch.object(reader.os,'read',side_effect=AssertionError('content read with writable mapping')):
+                with self.assertRaises(PermissionError):reader.read_input(self.path,maximum=16)
+        finally:mapping.close()
+        self.assertEqual(reader.read_input(self.path,maximum=16),b'12345678')
+
+    @unittest.skipUnless(os.name=='nt','Windows sharing contract')
+    def test_reader_allows_readers_but_blocks_writers_until_close(self):
+        native=os.read;observations=[];consumed=[]
+        def read(fd,n):
+            with self.path.open('rb') as other:self.assertEqual(other.read(),b'12345678')
+            for mode in ('r+b','ab','wb'):
+                with self.subTest(mode=mode),self.assertRaises(PermissionError):self.path.open(mode)
+                observations.append(mode)
+            raw=native(fd,n);consumed.append(len(raw));return raw
+        with patch.object(reader.os,'read',side_effect=read):
+            self.assertEqual(reader.read_input(self.path,maximum=8),b'12345678')
+        self.assertGreaterEqual(len(observations),3);self.assertLessEqual(sum(consumed),9)
+        self.path.write_bytes(b'abcdefgh')
+        self.assertEqual(reader.read_input(self.path,maximum=8),b'abcdefgh')
 
     def test_leaf_replacement_is_refused(self):
         replacement=self.root/'new.json';replacement.write_bytes(b'abcdefgh');native=os.read;changed=False

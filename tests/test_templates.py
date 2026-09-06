@@ -50,7 +50,7 @@ def rehash(exported):
 class TemplateTests(unittest.TestCase):
     def setUp(self):
         temporary = tempfile.TemporaryDirectory(); self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name); self.clock = ManualClock()
+        self.root = Path(temporary.name).resolve(); self.clock = ManualClock()
         self.db = self.root/'factory.sqlite3'; self.store = FactoryStore(self.db,clock=self.clock)
         self.engine = FactoryEngine(self.store,base_directory=self.root,executor=DeterministicMockExecutor(),clock=self.clock,
                                     sleeper=lambda _:self.fail('template wait must not spin'))
