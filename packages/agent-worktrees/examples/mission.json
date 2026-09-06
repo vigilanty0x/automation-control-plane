@@ -1,0 +1,19 @@
+{
+  "acceptance_criteria": [
+    "unit tests pass",
+    "ownership report exists"
+  ],
+  "agent_id": "docs-agent",
+  "base_ref": "main",
+  "idempotency_key": "docs-mission-v1",
+  "max_attempts": 2,
+  "metadata": {
+    "priority": "normal"
+  },
+  "owned_paths": [
+    "docs/guide",
+    "artifacts/ownership-report.json"
+  ],
+  "owner": "documentation-team",
+  "task_id": "write-public-guide"
+}
